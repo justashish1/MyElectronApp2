@@ -34,21 +34,21 @@ def load_logo(filename):
 
 # Custom CSS for styling
 def custom_css():
-    st.markdown(f"""
+    st.markdown("""
         <style>
-            .main-title {{
+            .main-title {
                 font-size: 25px;
                 color: #32c800;
                 text-align: center;
                 font-weight: bold;
-            }}
-            .current-time {{
+            }
+            .current-time {
                 font-size: 18px;
                 font-weight: bold;
                 display: inline-block;
                 margin-right: 20px;
-            }}
-            .upload-button {{
+            }
+            .upload-button {
                 width: 30%;
                 height: 50px;
                 line-height: 50px;
@@ -62,17 +62,17 @@ def custom_css():
                 top: 5px;
                 left: 10px;
                 color: #32c800;
-            }}
-            .center-text {{
+            }
+            .center-text {
                 text-align: center;
-            }}
-            .logo {{
+            }
+            .logo {
                 height: 35px;
                 display: inline-block;
                 margin-left: auto;
                 margin-right: 10px;
-            }}
-            .header {{
+            }
+            .header {
                 position: relative;
                 width: 100%;
                 margin-bottom: 20px;
@@ -80,7 +80,22 @@ def custom_css():
                 justify-content: space-between;
                 color: #32c800;
                 align-items: center;
-             }}
+            }
+            .stProgress > div > div > div > div {
+                background-color: red;
+            }
+            .fixed-filter {
+                position: fixed;
+                top: 0;
+                width: 100%;
+                background-color: white;
+                z-index: 100;
+                padding: 10px;
+                box-shadow: 0px 4px 2px -2px gray;
+            }
+            .content {
+                padding-top: 150px;
+            }
         </style>
     """, unsafe_allow_html=True)
 
@@ -120,7 +135,7 @@ def add_js_script():
 
 # Authenticate user
 def authenticate(username, password):
-    if username == "admin" and password == "password106":
+    if username == "admin" and password == "password":
         st.session_state.authenticated = True
     else:
         st.error("Invalid username or password")
@@ -194,36 +209,37 @@ def main():
         uploaded_file = st.file_uploader("Upload a CSV or Excel file", type=["csv", "xlsx"], label_visibility="visible", help="Upload a file in CSV or Excel format")
 
         if uploaded_file:
+            progress_bar = st.progress(0)
             start_time = datetime.now()
+            for i in range(100):
+                time.sleep(0.01)
+                progress_bar.progress(i + 1)
             df = load_data(uploaded_file)
             process_end_time = datetime.now()
             loading_time = (process_end_time - start_time).total_seconds()
+            progress_bar.progress(100)
             st.write(f"Loaded file: {uploaded_file.name} (Total processing time: {loading_time:.2f} seconds)")
             logging.info(f"Loaded file: {uploaded_file.name} (Total processing time: {loading_time:.2f} seconds)")
 
             df = preprocess_data(df)
 
             if not df.empty:
-                min_date = df.index.min().date()
-                max_date = df.index.max().date()
-                min_time = df.index.min().strftime('%H:%M:%S')
-                max_time = df.index.max().strftime('%H:%M:%S')
-
+                st.markdown('<div class="fixed-filter">', unsafe_allow_html=True)
                 col1, col2, col3, col4, col5, col6 = st.columns(6)
 
                 with col1:
-                    start_date = st.date_input("Start Date", min_value=min_date, max_value=max_date, value=min_date)
+                    start_date = st.date_input("Start Date", min_value=df.index.min().date(), max_value=df.index.max().date(), value=df.index.min().date())
 
                 with col2:
-                    end_date = st.date_input("End Date", min_value=min_date, max_value=max_date, value=max_date)
+                    end_date = st.date_input("End Date", min_value=df.index.min().date(), max_value=df.index.max().date(), value=df.index.max().date())
 
                 with col3:
                     time_options = generate_time_options()
-                    start_time_index = time_options.index(min_time)
+                    start_time_index = time_options.index(df.index.min().strftime('%H:%M:%S'))
                     start_time_str = st.selectbox("Start Time", time_options, index=start_time_index)
 
                 with col4:
-                    end_time_index = time_options.index(max_time)
+                    end_time_index = time_options.index(df.index.max().strftime('%H:%M:%S'))
                     end_time_str = st.selectbox("End Time", time_options, index=end_time_index)
 
                 with col5:
@@ -231,6 +247,9 @@ def main():
 
                 with col6:
                     sampling_interval = st.slider("Sampling Interval (minutes)", 1, 60, 1)
+
+                st.markdown('</div>', unsafe_allow_html=True)
+                st.markdown('<div class="content">', unsafe_allow_html=True)
 
                 for col in df.select_dtypes(include=['category', 'object']).columns:
                     unique_values = df[col].unique()
@@ -407,6 +426,7 @@ def main():
                             st.error(f"Forecasting failed: {e}")
                             logging.error(f"Forecasting failed: {e}")
 
+                st.markdown('</div>', unsafe_allow_html=True)
             else:
                 st.error("The uploaded file does not contain a 'Timestamp' column.")
                 logging.error("The uploaded file does not contain a 'Timestamp' column.")
