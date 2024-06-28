@@ -209,14 +209,24 @@ def main():
     if not st.session_state.authenticated:
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
-        login_button = st.button("Login")
-        if login_button:
+        if st.button("Login"):
             authenticate(username, password)
+            if st.session_state.authenticated:
+                st.experimental_rerun()
         st.stop()
 
     uploaded_file = st.file_uploader("Upload a CSV or Excel file", type=["csv", "xlsx"], label_visibility="visible", help="Upload a file in CSV or Excel format")
 
     if uploaded_file:
+        # Removing redundant progress bar
+        st.markdown("""
+            <style>
+                .stProgress > div > div > div > div {
+                    background-color: #32c800;
+                }
+            </style>
+        """, unsafe_allow_html=True)
+        
         progress_bar = st.progress(0)
         start_time = datetime.now()
         for i in range(100):
