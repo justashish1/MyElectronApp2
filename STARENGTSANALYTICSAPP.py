@@ -224,7 +224,6 @@ def main():
         df = load_data(uploaded_file)
         process_end_time = datetime.now()
         loading_time = (process_end_time - start_time).total_seconds()
-        progress_bar.progress(100)
         st.write(f"Loaded file: {uploaded_file.name} (Total processing time: {loading_time:.2f} seconds)")
         logging.info(f"Loaded file: {uploaded_file.name} (Total processing time: {loading_time:.2f} seconds)")
 
