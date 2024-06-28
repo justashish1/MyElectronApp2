@@ -104,6 +104,14 @@ def custom_css():
             .stButton > button:hover {
                 background-color: #28a745;
             }
+            .custom-error {
+                background-color: #ff4c4c;
+                color: white;
+                padding: 10px;
+                border-radius: 5px;
+                text-align: center;
+                font-weight: bold;
+            }
         </style>
     """, unsafe_allow_html=True)
 
@@ -164,6 +172,24 @@ def preprocess_data(df):
         df = df.dropna(subset=['Timestamp'])
         df.set_index('Timestamp', inplace=True)
     return df
+
+# Validate 'Timestamp' column and format
+def validate_timestamp_column(df):
+    if 'Timestamp' not in df.columns:
+        st.markdown('<div class="custom-error">The uploaded file does not contain a \'Timestamp\' column The correct column name is Timestamp and format is YYYY-MM-DD HH:MM:SS.</div>', unsafe_allow_html=True)
+        logging.error("The uploaded file does not contain a 'Timestamp' column, The correct column name is Timestamp and format is YYYY-MM-DD HH:MM:SS")
+        st.write("### Debugging Information")
+        st.write(df.head())  # Display the first few rows of the dataframe for debugging
+        return False
+    try:
+        pd.to_datetime(df['Timestamp'], format='%Y-%m-%d %H:%M:%S')
+    except ValueError:
+        st.markdown('<div class="custom-error">The \'Timestamp\' column is not in the correct datetime format (YYYY-MM-DD HH:MM:SS).</div>', unsafe_allow_html=True)
+        logging.error("The 'Timestamp' column is not in the correct datetime format (YYYY-MM-DD HH:MM:SS).")
+        st.write("### Debugging Information")
+        st.write(df.head())  # Display the first few rows of the dataframe for debugging
+        return False
+    return True
 
 # Resample dataframe
 @st.cache_data
@@ -237,6 +263,9 @@ def main():
         loading_time = (process_end_time - start_time).total_seconds()
         st.write(f"Loaded file: {uploaded_file.name} (Total processing time: {loading_time:.2f} seconds)")
         logging.info(f"Loaded file: {uploaded_file.name} (Total processing time: {loading_time:.2f} seconds)")
+
+        if not validate_timestamp_column(df):
+            return
 
         df = preprocess_data(df)
 
@@ -447,8 +476,10 @@ def main():
 
             st.markdown('</div>', unsafe_allow_html=True)
         else:
-            st.error("The uploaded file does not contain a 'Timestamp' column.")
-            logging.error("The uploaded file does not contain a 'Timestamp' column.")
+            st.markdown('<div class="custom-error">The uploaded file does not contain a \'Timestamp\' column.</div>', unsafe_allow_html=True)
+            st.write("### Debugging Information")
+            st.write(df.head())  # Display the first few rows of the dataframe for debugging
+            logging.error("The uploaded file does not contain a 'Timestamp' column,The correct column name is Timestamp and format is YYYY-MM-DD HH:MM:SS.")
     else:
         st.write("Please upload a CSV or Excel file to get started.")
         logging.info("Waiting for file upload.")
