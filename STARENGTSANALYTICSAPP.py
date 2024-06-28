@@ -95,7 +95,7 @@ def custom_css():
                 box-shadow: 0px 4px 2px -2px gray;
             }
             .content {
-                padding-top: 150px;
+                padding-top: 0px;
             }
             .stButton > button {
                 background-color: #32c800;
@@ -266,7 +266,6 @@ def main():
                 sampling_interval = st.slider("Sampling Interval (minutes)", 1, 60, 1)
 
             st.markdown('</div>', unsafe_allow_html=True)
-            st.markdown('<div class="content">', unsafe_allow_html=True)
 
             for col in df.select_dtypes(include=['category', 'object']).columns:
                 unique_values = df[col].unique()
@@ -443,7 +442,6 @@ def main():
                         st.error(f"Forecasting failed: {e}")
                         logging.error(f"Forecasting failed: {e}")
 
-            st.markdown('</div>', unsafe_allow_html=True)
         else:
             st.error("The uploaded file does not contain a 'Timestamp' column.")
             logging.error("The uploaded file does not contain a 'Timestamp' column.")
