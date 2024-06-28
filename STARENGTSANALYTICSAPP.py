@@ -136,7 +136,7 @@ def add_js_script():
 
 # Authenticate user
 def authenticate(username, password):
-    if username == "admin" and password == "password":
+    if username == "admin" and password == "password106":
         st.session_state.authenticated = True
     else:
         st.error("Invalid username or password")
