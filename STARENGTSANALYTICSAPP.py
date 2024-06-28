@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
 import base64
-import time
 import numpy as np
+import time
 from datetime import datetime
 from sklearn.linear_model import LinearRegression
 from sklearn.cluster import KMeans
@@ -97,6 +97,13 @@ def custom_css():
             .content {
                 padding-top: 150px;
             }
+            .stButton > button {
+                background-color: #32c800;
+                border: none;
+            }
+            .stButton > button:hover {
+                background-color: #28a745;
+            }
         </style>
     """, unsafe_allow_html=True)
 
@@ -136,7 +143,7 @@ def add_js_script():
 
 # Authenticate user
 def authenticate(username, password):
-    if username == "admin" and password == "password106":
+    if username == "admin" and password == "password":
         st.session_state.authenticated = True
     else:
         st.error("Invalid username or password")
@@ -202,7 +209,7 @@ def main():
 
         if not st.session_state.authenticated:
             username = st.text_input("Username")
-            password = st.text_input("Password", type="password")
+            password = st.text_input("Password", type="password106")
             if st.button("Login"):
                 authenticate(username, password)
             st.stop()
