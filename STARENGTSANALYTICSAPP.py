@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import base64
+import time
 import numpy as np
 from datetime import datetime
 from sklearn.linear_model import LinearRegression
