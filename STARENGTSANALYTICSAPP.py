@@ -83,7 +83,7 @@ def custom_css():
                 align-items: center;
             }
             .stProgress > div > div > div > div {
-                background-color: red;
+                background-color: #32c800;
             }
             .fixed-filter {
                 position: fixed;
