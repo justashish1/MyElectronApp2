@@ -86,6 +86,7 @@ def custom_css():
                 background-color: #32c800;
             }
             .fixed-filter {
+                position: -webkit-sticky;
                 position: sticky;
                 top: 0;
                 background-color: white;
@@ -94,7 +95,7 @@ def custom_css():
                 box-shadow: 0px 4px 2px -2px gray;
             }
             .content {
-                padding-top: 50px;
+                padding-top: 150px;
             }
             .stButton > button {
                 background-color: #32c800;
@@ -208,7 +209,8 @@ def main():
     if not st.session_state.authenticated:
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
-        if st.button("Login"):
+        login_button = st.button("Login")
+        if login_button:
             authenticate(username, password)
         st.stop()
 
