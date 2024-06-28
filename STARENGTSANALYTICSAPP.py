@@ -86,16 +86,15 @@ def custom_css():
                 background-color: #32c800;
             }
             .fixed-filter {
-                position: fixed;
+                position: sticky;
                 top: 0;
-                width: 100%;
                 background-color: white;
                 z-index: 100;
                 padding: 10px;
                 box-shadow: 0px 4px 2px -2px gray;
             }
             .content {
-                padding-top: 150px;
+                padding-top: 50px;
             }
             .stButton > button {
                 background-color: #32c800;
