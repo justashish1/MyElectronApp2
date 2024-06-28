@@ -1,0 +1,509 @@
+import tkinter as tk
+from tkinter import filedialog, messagebox, ttk, simpledialog
+from tkcalendar import DateEntry
+import pandas as pd
+import numpy as np
+from datetime import datetime
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from sklearn.linear_model import LinearRegression
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
+from statsmodels.tsa.seasonal import seasonal_decompose
+from sklearn.ensemble import IsolationForest
+from prophet import Prophet
+import seaborn as sns
+import logging
+import time
+
+# Set up logging
+logging.basicConfig(filename='app.log', level=logging.INFO, format='%(asctime)s %(levelname)s:%(message)s')
+logging.info('Application started')
+
+class App:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Henkel Timeseries Analysis Application")
+        self.root.geometry("1200x800")
+        self.authenticated = False
+
+        self.create_login_widgets()
+
+    def create_login_widgets(self):
+        self.header_frame = tk.Frame(self.root)
+        self.header_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        self.clock_label = tk.Label(self.header_frame, font=("Arial", 14))
+        self.clock_label.pack(side=tk.LEFT)
+        self.update_clock()
+
+        self.logo = tk.PhotoImage(file='logo.png')  # Ensure you have a logo file named 'logo.png'
+        self.small_logo = self.logo.subsample(5, 5)  # Reduce the size of the logo by half
+        self.logo_label = tk.Label(self.header_frame, image=self.small_logo)
+        self.logo_label.pack(side=tk.RIGHT)
+
+        self.title_label = tk.Label(self.root, text="HENKEL TIMESERIES ANALYSIS APPLICATION", font=("Arial", 18, "bold"), fg="red")
+        self.title_label.pack(pady=10)
+
+        self.login_frame = tk.Frame(self.root)
+        self.login_frame.pack(pady=20)
+
+        self.username_label = tk.Label(self.login_frame, text="Username", font=("Arial", 12))
+        self.username_label.pack(pady=5)
+        self.username_entry = tk.Entry(self.login_frame, font=("Arial", 12))
+        self.username_entry.pack()
+
+        self.password_label = tk.Label(self.login_frame, text="Password", font=("Arial", 12))
+        self.password_label.pack(pady=5)
+        self.password_entry = tk.Entry(self.login_frame, show="*", font=("Arial", 12))
+        self.password_entry.pack()
+
+        self.login_button = tk.Button(self.login_frame, text="Login", command=self.authenticate_user, font=("Arial", 12))
+        self.login_button.pack(pady=20)
+
+    def authenticate_user(self):
+        username = self.username_entry.get()
+        password = self.password_entry.get()
+        if username == "admin" and password == "password":
+            self.authenticated = True
+            self.login_frame.destroy()
+            self.create_main_widgets()
+        else:
+            messagebox.showerror("Error", "Invalid username or password")
+
+    def create_main_widgets(self):
+        self.main_frame = tk.Frame(self.root)
+        self.main_frame.pack(pady=10, fill=tk.BOTH, expand=True)
+
+        self.filter_frame = tk.Frame(self.main_frame)
+        self.filter_frame.pack(pady=10, fill=tk.X)
+
+        self.start_date_label = tk.Label(self.filter_frame, text="Start Date", font=("Arial", 10))
+        self.start_date_label.grid(row=1, column=0, padx=5, sticky='ew')
+        self.start_date = DateEntry(self.filter_frame, font=("Arial", 10), date_pattern='yyyy-MM-dd')
+        self.start_date.grid(row=2, column=0, padx=5, sticky='ew')
+
+        self.start_time_label = tk.Label(self.filter_frame, text="Start Time", font=("Arial", 10))
+        self.start_time_label.grid(row=1, column=1, padx=5, sticky='ew')
+        self.start_time = ttk.Combobox(self.filter_frame, font=("Arial", 10))
+        self.start_time.grid(row=2, column=1, padx=5, sticky='ew')
+
+        self.end_date_label = tk.Label(self.filter_frame, text="End Date", font=("Arial", 10))
+        self.end_date_label.grid(row=1, column=2, padx=5, sticky='ew')
+        self.end_date = DateEntry(self.filter_frame, font=("Arial", 10), date_pattern='yyyy-MM-dd')
+        self.end_date.grid(row=2, column=2, padx=5, sticky='ew')
+
+        self.end_time_label = tk.Label(self.filter_frame, text="End Time", font=("Arial", 10))
+        self.end_time_label.grid(row=1, column=3, padx=5, sticky='ew')
+        self.end_time = ttk.Combobox(self.filter_frame, font=("Arial", 10))
+        self.end_time.grid(row=2, column=3, padx=5, sticky='ew')
+
+        self.value_column_label = tk.Label(self.filter_frame, text="Value Column", font=("Arial", 10))
+        self.value_column_label.grid(row=1, column=4, padx=5, sticky='ew')
+        self.value_column = ttk.Combobox(self.filter_frame, font=("Arial", 10))
+        self.value_column.grid(row=2, column=4, padx=5, sticky='ew')
+
+        self.sampling_interval_label = tk.Label(self.filter_frame, text="Sampling Interval (minutes)", font=("Arial", 10))
+        self.sampling_interval_label.grid(row=1, column=5, padx=5, sticky='ew')
+        self.sampling_interval = tk.Scale(self.filter_frame, from_=1, to=60, orient=tk.HORIZONTAL, font=("Arial", 10))
+        self.sampling_interval.grid(row=2, column=5, padx=5, sticky='ew')
+
+        self.load_button = tk.Button(self.filter_frame, text="Load CSV or Excel", command=self.load_data, font=("Arial", 12))
+        self.load_button.grid(row=2, column=8, padx=5, pady=5, sticky='ew')
+
+        self.filter_button = tk.Button(self.filter_frame, text="Filter Data", command=self.filter_data, font=("Arial", 10))
+        self.filter_button.grid(row=2, column=6, padx=5, sticky='ew')
+
+        for col in range(7):
+            self.filter_frame.grid_columnconfigure(col, weight=1)
+
+        self.plot_button = tk.Button(self.filter_frame, text="Plot Data", command=self.plot_data, font=("Arial", 10))
+        self.plot_button.grid(row=3, column=0, padx=5, pady=5, sticky='ew')
+
+        self.forecast_button = tk.Button(self.filter_frame, text="Forecast Future", command=self.forecast_future, font=("Arial", 10))
+        self.forecast_button.grid(row=3, column=1, padx=5, pady=5, sticky='ew')
+
+        self.info_button = tk.Button(self.filter_frame, text="Info", command=self.show_info, font=("Arial", 10))
+        self.info_button.grid(row=3, column=2, padx=5, pady=5, sticky='ew')
+
+        self.descriptive_stats_button = tk.Button(self.filter_frame, text="Show Descriptive Statistics", command=self.show_descriptive_statistics, font=("Arial", 10))
+        self.descriptive_stats_button.grid(row=3, column=3, padx=5, pady=5, sticky='ew')
+
+        self.control_chart_button = tk.Button(self.filter_frame, text="Control Chart", command=self.create_control_chart, font=("Arial", 10))
+        self.control_chart_button.grid(row=3, column=4, padx=5, pady=5, sticky='ew')
+
+        self.clustering_plot_button = tk.Button(self.filter_frame, text="Clustering Plot", command=self.create_clustering_plot, font=("Arial", 10))
+        self.clustering_plot_button.grid(row=3, column=5, padx=5, pady=5, sticky='ew')
+
+        self.histogram_button = tk.Button(self.filter_frame, text="Histogram", command=self.create_histogram, font=("Arial", 10))
+        self.histogram_button.grid(row=3, column=6, padx=5, pady=5, sticky='ew')
+
+        self.pair_plot_button = tk.Button(self.filter_frame, text="Pair Plot", command=self.create_pair_plot, font=("Arial", 10))
+        self.pair_plot_button.grid(row=3, column=7, padx=5, pady=5, sticky='ew')
+
+        self.correlation_heatmap_button = tk.Button(self.filter_frame, text="Correlation Heatmap", command=self.create_correlation_heatmap, font=("Arial", 10))
+        self.correlation_heatmap_button.grid(row=3, column=8, padx=5, pady=5, sticky='ew')
+
+        for col in range(9):
+            self.filter_frame.grid_columnconfigure(col, weight=1)
+
+        self.plot_frame = tk.Frame(self.main_frame)
+        self.plot_frame.pack(fill=tk.BOTH, expand=True)
+
+        self.developer_label = tk.Label(self.root, text="Developer - Ashish Malviya", font=("Arial", 8))
+        self.developer_label.pack(side=tk.BOTTOM, anchor=tk.E, padx=10, pady=10)
+
+    def update_clock(self):
+        now = time.strftime("%Y-%m-%d %H:%M:%S")
+        self.clock_label.config(text=now)
+        self.root.after(1000, self.update_clock)
+
+    def load_data(self):
+        file_path = filedialog.askopenfilename(filetypes=[("CSV files", "*.csv"), ("Excel files", "*.xlsx")])
+        if file_path:
+            try:
+                if file_path.endswith('.xlsx'):
+                    self.df = pd.read_excel(file_path)
+                else:
+                    self.df = pd.read_csv(file_path)
+                self.preprocess_data()
+                self.value_column['values'] = list(self.df.columns)
+                self.start_date.set_date(self.df.index.min().date())
+                self.end_date.set_date(self.df.index.max().date())
+                self.start_time['values'] = [f"{i:02d}:00:00" for i in range(24)]
+                self.end_time['values'] = [f"{i:02d}:00:00" for i in range(24)]
+                self.start_time.set(self.df.index.min().time().strftime('%H:%M:%S'))
+                self.end_time.set(self.df.index.max().time().strftime('%H:%M:%S'))
+                messagebox.showinfo("Success", f"Loaded file: {file_path}")
+                logging.info(f"Loaded file: {file_path}")
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to load file: {e}")
+                logging.error(f"Failed to load file: {e}")
+
+    def preprocess_data(self):
+        if 'Timestamp' in self.df.columns:
+            self.df['Timestamp'] = pd.to_datetime(self.df['Timestamp'], errors='coerce')
+            self.df = self.df.dropna(subset=['Timestamp'])
+            self.df.set_index('Timestamp', inplace=True)
+
+    def filter_data(self):
+        try:
+            start_date = self.start_date.get()
+            end_date = self.end_date.get()
+            start_time = self.start_time.get()
+            end_time = self.end_time.get()
+            value_col = self.value_column.get()
+            sampling_interval = int(self.sampling_interval.get())
+
+            start_datetime = datetime.strptime(f"{start_date} {start_time}", '%Y-%m-%d %H:%M:%S')
+            end_datetime = datetime.strptime(f"{end_date} {end_time}", '%Y-%m-%d %H:%M:%S')
+
+            mask = (self.df.index >= start_datetime) & (self.df.index <= end_datetime)
+            self.filtered_df = self.df.loc[mask]
+            self.resampled_df = self.filtered_df.resample(f'{sampling_interval}min').mean().fillna(0)
+
+            messagebox.showinfo("Success", "Data filtered and resampled")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to filter data: {e}")
+            logging.error(f"Failed to filter data: {e}")
+
+    def plot_data(self):
+        try:
+            if hasattr(self, 'resampled_df') and not self.resampled_df.empty:
+                value_col = self.value_column.get()
+
+                fig = plt.figure()
+                ax = fig.add_subplot(111)
+
+                ax.plot(self.resampled_df.index, self.resampled_df[value_col], label=value_col)
+                ax.set_title('Time Series Data')
+                ax.set_xlabel('Timestamp')
+                ax.set_ylabel(value_col)
+
+                self.perform_anomaly_detection(value_col, ax)
+                self.perform_linear_regression(value_col, ax)
+
+                if len(self.resampled_df) >= 60:
+                    self.perform_seasonal_decompose(value_col, ax)
+                else:
+                    logging.warning(f"Not enough data for seasonal decomposition: {len(self.resampled_df)} observations")
+
+                for widget in self.plot_frame.winfo_children():
+                    widget.destroy()
+
+                canvas = FigureCanvasTkAgg(fig, master=self.plot_frame)
+                canvas.draw()
+                canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+
+                messagebox.showinfo("Success", "Data plotted")
+            else:
+                messagebox.showerror("Error", "No data to plot")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to plot data: {e}")
+            logging.error(f"Failed to plot data: {e}")
+
+    def perform_anomaly_detection(self, value_col, ax):
+        isolation_forest = IsolationForest(contamination=0.05)
+        anomalies = isolation_forest.fit_predict(self.resampled_df[[value_col]])
+        self.resampled_df['Anomaly'] = anomalies
+        ax.scatter(self.resampled_df[self.resampled_df['Anomaly'] == -1].index, 
+                   self.resampled_df[self.resampled_df['Anomaly'] == -1][value_col], 
+                   color='orange', label='Anomalies')
+
+    def perform_linear_regression(self, value_col, ax):
+        X = np.array((self.resampled_df.index - self.resampled_df.index.min()).total_seconds()).reshape(-1, 1)
+        y = self.resampled_df[value_col].values
+        reg = LinearRegression().fit(X, y)
+        y_pred = reg.predict(X)
+        ax.plot(self.resampled_df.index, y_pred, color='green', linestyle='--', label='Regression Line')
+
+    def perform_seasonal_decompose(self, value_col, ax):
+        decomposition = seasonal_decompose(self.resampled_df[value_col], model='additive', period=30)
+        trend = decomposition.trend.dropna()
+        seasonal = decomposition.seasonal.dropna()
+        resid = decomposition.resid.dropna()
+
+        fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 8))
+        fig.suptitle('Time Series Decomposition')
+
+        ax1.plot(trend.index, trend, label='Trend', color='blue')
+        ax1.legend(loc='best')
+
+        ax2.plot(seasonal.index, seasonal, label='Seasonality', color='orange')
+        ax2.legend(loc='best')
+
+        ax3.plot(resid.index, resid, label='Residuals', color='green')
+        ax3.legend(loc='best')
+
+        fig.tight_layout()
+
+        for widget in self.plot_frame.winfo_children():
+            widget.destroy()
+
+        canvas = FigureCanvasTkAgg(fig, master=self.plot_frame)
+        canvas.draw()
+        canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+
+    def forecast_future(self):
+        try:
+            if hasattr(self, 'resampled_df') and not self.resampled_df.empty:
+                value_col = self.value_column.get()
+                forecast_periods = int(simpledialog.askstring("Input", "Enter forecasting period (days):"))
+
+                forecast = self.generate_forecast(self.resampled_df, value_col, forecast_periods)
+                
+                fig = plt.figure()
+                ax = fig.add_subplot(111)
+                ax.plot(forecast['ds'], forecast['yhat'], label='Forecast', color='blue')
+                ax.fill_between(forecast['ds'], forecast['yhat_lower'], forecast['yhat_upper'], color='gray', alpha=0.5)
+                ax.set_title('Forecast')
+                ax.set_xlabel('Timestamp')
+                ax.set_ylabel(value_col)
+
+                for widget in self.plot_frame.winfo_children():
+                    widget.destroy()
+
+                canvas = FigureCanvasTkAgg(fig, master=self.plot_frame)
+                canvas.draw()
+                canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+
+                messagebox.showinfo("Success", "Forecasting completed")
+            else:
+                messagebox.showerror("Error", "No data to forecast")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to forecast data: {e}")
+            logging.error(f"Failed to forecast data: {e}")
+
+    def generate_forecast(self, df, value_column, periods):
+        df.reset_index(inplace=True)
+        df.rename(columns={'Timestamp': 'ds', value_column: 'y'}, inplace=True)
+        model = Prophet(daily_seasonality=True)
+        model.fit(df)
+        future = model.make_future_dataframe(periods=periods)
+        forecast = model.predict(future)
+        return forecast
+
+    def show_info(self):
+        try:
+            if hasattr(self, 'df') and not self.df.empty:
+                info_string = f"""
+                Head:\n{self.df.head()}\n
+                Shape: {self.df.shape}\n
+                Size: {self.df.size}\n
+                Describe:\n{self.df.describe().T}\n
+                Info:\n{self.df.info(buf=None)}\n
+                Missing Values:\n{self.df.isnull().sum()}\n
+                Duplicated Rows:\n{self.df.duplicated().sum()}\n
+                """
+                info_window = tk.Toplevel(self.root)
+                info_window.title("Data Information")
+                text = tk.Text(info_window, wrap=tk.WORD)
+                text.insert(tk.END, info_string)
+                text.pack(expand=1, fill=tk.BOTH)
+                messagebox.showinfo("Success", "Data information displayed")
+            else:
+                messagebox.showerror("Error", "No data loaded")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to show data information: {e}")
+            logging.error(f"Failed to show data information: {e}")
+
+    def show_descriptive_statistics(self):
+        try:
+            if hasattr(self, 'resampled_df') and not self.resampled_df.empty:
+                stats = self.resampled_df.describe()
+                stats.loc['range'] = stats.loc['max'] - stats.loc['min']
+                stats.loc['median'] = self.resampled_df.median()
+                stats.loc['total_active_time'] = (self.resampled_df[self.value_column.get()] > 0).sum() * int(self.sampling_interval.get())
+                stats.loc['total_inactive_time'] = (self.resampled_df[self.value_column.get()] == 0).sum() * int(self.sampling_interval.get())
+
+                stats_window = tk.Toplevel(self.root)
+                stats_window.title("Descriptive Statistics")
+                text = tk.Text(stats_window, wrap=tk.WORD)
+                text.insert(tk.END, str(stats))
+                text.pack(expand=1, fill=tk.BOTH)
+                messagebox.showinfo("Success", "Descriptive statistics displayed")
+            else:
+                messagebox.showerror("Error", "No data for statistics")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to show descriptive statistics: {e}")
+            logging.error(f"Failed to show descriptive statistics: {e}")
+
+    def create_control_chart(self):
+        try:
+            if hasattr(self, 'resampled_df') and not self.resampled_df.empty:
+                value_col = self.value_column.get()
+
+                mean = self.resampled_df[value_col].mean()
+                std_dev = self.resampled_df[value_col].std()
+                control_limits = [mean + 3 * std_dev, mean - 3 * std_dev]
+
+                fig, ax = plt.subplots()
+                ax.plot(self.resampled_df.index, self.resampled_df[value_col], label=value_col)
+                ax.axhline(mean, color='green', linestyle='--', label='Mean')
+                ax.axhline(control_limits[0], color='red', linestyle='--', label='Upper Control Limit')
+                ax.axhline(control_limits[1], color='red', linestyle='--', label='Lower Control Limit')
+                ax.legend()
+                ax.set_title('Control Chart')
+                ax.set_xlabel('Timestamp')
+                ax.set_ylabel(value_col)
+
+                for widget in self.plot_frame.winfo_children():
+                    widget.destroy()
+
+                canvas = FigureCanvasTkAgg(fig, master=self.plot_frame)
+                canvas.draw()
+                canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+
+                messagebox.showinfo("Success", "Control chart created")
+            else:
+                messagebox.showerror("Error", "No data for control chart")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to create control chart: {e}")
+            logging.error(f"Failed to create control chart: {e}")
+
+    def create_clustering_plot(self):
+        try:
+            if hasattr(self, 'resampled_df') and not self.resampled_df.empty:
+                value_col = self.value_column.get()
+                X = self.resampled_df[[value_col]].values
+
+                kmeans = KMeans(n_clusters=3)
+                clusters = kmeans.fit_predict(X)
+                self.resampled_df['Cluster'] = clusters
+                silhouette_avg = silhouette_score(X, clusters)
+
+                fig, ax = plt.subplots()
+                sns.scatterplot(x=self.resampled_df.index, y=self.resampled_df[value_col], hue=clusters, palette="deep", ax=ax)
+                ax.set_title(f'Clustering Plot (Silhouette Score: {silhouette_avg:.2f})')
+                ax.set_xlabel('Timestamp')
+                ax.set_ylabel(value_col)
+
+                for widget in self.plot_frame.winfo_children():
+                    widget.destroy()
+
+                canvas = FigureCanvasTkAgg(fig, master=self.plot_frame)
+                canvas.draw()
+                canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+
+                messagebox.showinfo("Success", "Clustering plot created")
+            else:
+                messagebox.showerror("Error", "No data for clustering plot")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to create clustering plot: {e}")
+            logging.error(f"Failed to create clustering plot: {e}")
+
+    def create_histogram(self):
+        try:
+            if hasattr(self, 'resampled_df') and not self.resampled_df.empty:
+                value_col = self.value_column.get()
+
+                fig, ax = plt.subplots()
+                self.resampled_df[value_col].plot(kind='hist', bins=30, ax=ax)
+                ax.set_title('Histogram')
+                ax.set_xlabel(value_col)
+                ax.set_ylabel('Frequency')
+
+                for widget in self.plot_frame.winfo_children():
+                    widget.destroy()
+
+                canvas = FigureCanvasTkAgg(fig, master=self.plot_frame)
+                canvas.draw()
+                canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+
+                messagebox.showinfo("Success", "Histogram created")
+            else:
+                messagebox.showerror("Error", "No data for histogram")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to create histogram: {e}")
+            logging.error(f"Failed to create histogram: {e}")
+
+    def create_pair_plot(self):
+        try:
+            if hasattr(self, 'resampled_df') and not self.resampled_df.empty:
+                value_col = self.value_column.get()
+                pair_plot_data = self.resampled_df.select_dtypes(include=[np.number]).dropna()
+
+                fig = sns.pairplot(pair_plot_data)
+                fig.fig.suptitle('Pair Plot', y=1.02)
+
+                for widget in self.plot_frame.winfo_children():
+                    widget.destroy()
+
+                canvas = FigureCanvasTkAgg(fig.fig, master=self.plot_frame)
+                canvas.draw()
+                canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+
+                messagebox.showinfo("Success", "Pair plot created")
+            else:
+                messagebox.showerror("Error", "No data for pair plot")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to create pair plot: {e}")
+            logging.error(f"Failed to create pair plot: {e}")
+
+    def create_correlation_heatmap(self):
+        try:
+            if hasattr(self, 'resampled_df') and not self.resampled_df.empty:
+                correlation_data = self.resampled_df.corr()
+
+                fig, ax = plt.subplots()
+                sns.heatmap(correlation_data, annot=True, cmap='coolwarm', ax=ax)
+                ax.set_title('Correlation Heatmap')
+
+                for widget in self.plot_frame.winfo_children():
+                    widget.destroy()
+
+                canvas = FigureCanvasTkAgg(fig, master=self.plot_frame)
+                canvas.draw()
+                canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+
+                messagebox.showinfo("Success", "Correlation heatmap created")
+            else:
+                messagebox.showerror("Error", "No data for correlation heatmap")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to create correlation heatmap: {e}")
+            logging.error(f"Failed to create correlation heatmap: {e}")
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = App(root)
+    root.mainloop()

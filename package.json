@@ -1,0 +1,62 @@
+{
+  "name": "Starengts-timeseries-analysis-application",
+  "version": "1.0.1",
+  "description": "Electron app for running a Streamlit application",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "keywords": [
+    "electron",
+    "streamlit",
+    "python",
+    "npm"
+  ],
+  "author": "Ashish Malviya",
+  "license": "MIT",
+  "dependencies": {
+    "@electron/remote": "^2.1.2",
+    "axios": "^1.7.2",
+    "install": "^0.13.0",
+    "npm": "^10.8.1",
+    "winston": "^3.3.3"
+  },
+  "devDependencies": {
+    "electron": "^30.0.9",
+    "electron-builder": "^24.13.3",
+    "electron-packager": "^17.1.2"
+  },
+  "build": {
+    "appId": "com.Starengts.timeseriesanalysis",
+    "productName": "STARENGTS TIMESERIES ANALYTICS APPLICATION",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "STARENGTSANALYTICSAPP.py",
+      "logo.png",
+      "venv/**/*",
+      "node_modules",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "./logo.png",
+        "to": "logo.png"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "logo.ico"
+    }
+  }
+}
