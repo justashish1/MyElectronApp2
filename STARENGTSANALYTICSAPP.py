@@ -209,7 +209,8 @@ def main():
     if not st.session_state.authenticated:
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
-        if st.button("Login"):
+        login_button = st.button("Login")
+        if login_button:
             authenticate(username, password)
             if st.session_state.authenticated:
                 st.experimental_rerun()
