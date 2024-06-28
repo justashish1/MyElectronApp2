@@ -80,69 +80,7 @@ def custom_css():
                 justify-content: space-between;
                 color: #32c800;
                 align-items: center;
-            }}
-            .stFileUpload label span {{
-                color: #32c800 !important;
-                border-color: #32c800 !important;
-            }}
-            .stButton button {{
-                background-color: #32c800 !important;
-                border-color: #32c800 !important;
-                color: black !important;
-            }}
-            .stDateInput div[role='slider'] {{
-                background-color: #32c800 !important;
-            }}
-            .stDateInput input {{
-                color: black !important;
-            }}
-            .stSlider > div > div {{
-                color: black !important;
-            }}
-            .stSlider > div > div > div > div {{
-                background: #32c800 !important;
-                border-color: #32c800 !important;
-            }}
-            .stSlider div[data-baseweb='slider'] > div {{
-                background: #32c800 !important;
-            }}
-            .stCheckbox div[data-baseweb='checkbox'] > div {{
-                border-color: #32c800 !important;
-            }}
-            .stCheckbox input:checked + div[data-baseweb='checkbox'] > div {{
-                background-color: #32c800 !important;
-            }}
-            .stDateInput input[type='text'] {{
-                border: 1px solid #32c800 !important;
-                color: black !important;
-            }}
-            .stFileUpload div[data-baseweb='file-uploader'] {{
-                border: 1px solid #32c800 !important;
-            }}
-            .stFileUpload div[data-baseweb='file-uploader']:hover {{
-                border-color: #32c800 !important;
-            }}
-            .stFileUpload div[data-baseweb='file-uploader']::file-selector-button {{
-                background-color: #32c800 !important;
-                color: black !important;
-            }}
-            .stDateInput div[data-baseweb='input'] {{
-                border-color: #32c800 !important;
-            }}
-            .stDateInput div[data-baseweb='input']:focus-within {{
-                border-color: #32c800 !important;
-            }}
-            .stDateInput div[data-baseweb='calendar'] {{
-                background: #32c800 !important;
-                color: black !important;
-            }}
-            .stDateInput div[data-baseweb='calendar']::before {{
-                border-color: #32c800 !important;
-            }}
-            .DayPicker-Day--selected {{
-                background: #32c800 !important;
-                color: black !important;
-            }}
+             }}
         </style>
     """, unsafe_allow_html=True)
 
