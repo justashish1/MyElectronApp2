@@ -104,6 +104,14 @@ def custom_css():
             .stButton > button:hover {
                 background-color: #28a745;
             }
+                .custom-error {
+                background-color: #32c800;
+                color: white;
+                padding: 10px;
+                border-radius: 5px;
+                text-align: center;
+                font-weight: bold;
+            }
         </style>
     """, unsafe_allow_html=True)
 
@@ -240,7 +248,13 @@ def main():
 
         df = preprocess_data(df)
 
+        if 'Timestamp' not in df.columns:
+            st.error("The uploaded file does not contain a 'Timestamp' column or the 'Timestamp' column is not in datetime format - Timestamp 2023-10-01 17:24:00 ")
+            logging.error("The uploaded file does not contain a 'Timestamp' column or the 'Timestamp' column is not in datetime format - Timestamp 2023-10-01 17:24:00.")
+            return
+
         if not df.empty:
+            # Wrapping the filter section in a fixed div
             st.markdown('<div class="fixed-filter">', unsafe_allow_html=True)
             col1, col2, col3, col4, col5, col6 = st.columns(6)
 
@@ -264,10 +278,11 @@ def main():
 
             with col6:
                 sampling_interval = st.slider("Sampling Interval (minutes)", 1, 60, 1)
-
             st.markdown('</div>', unsafe_allow_html=True)
-            st.markdown('<div class="content">', unsafe_allow_html=True)
 
+            # Rest of the content
+            st.markdown('<div class="content">', unsafe_allow_html=True)
+            
             for col in df.select_dtypes(include=['category', 'object']).columns:
                 unique_values = df[col].unique()
                 selected_values = st.multiselect(f"Filter by {col}", unique_values, default=unique_values)
