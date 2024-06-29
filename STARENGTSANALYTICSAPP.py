@@ -257,7 +257,7 @@ def main():
 
         df = preprocess_data(df)
 
-        if not df.empty():
+        if not df.empty:
             # Filter section
             col1, col2, col3, col4, col5, col6 = st.columns(6)
 
