@@ -88,6 +88,8 @@ def custom_css():
             .stButton > button {
                 background-color: #32c800;
                 border: none;
+                color: black;
+                font-weight: bold;
             }
             .stButton > button:hover {
                 background-color: #28a745;
@@ -258,7 +260,6 @@ def main():
         df = preprocess_data(df)
 
         if not df.empty:
-            # Filter section
             col1, col2, col3, col4, col5, col6 = st.columns(6)
 
             with col1:
@@ -282,9 +283,6 @@ def main():
             with col6:
                 sampling_interval = st.slider("Sampling Interval (minutes)", 1, 60, 1)
 
-            # Rest of the content
-            st.markdown('<div class="content">', unsafe_allow_html=True)
-            
             for col in df.select_dtypes(include=['category', 'object']).columns:
                 unique_values = df[col].unique()
                 selected_values = st.multiselect(f"Filter by {col}", unique_values, default=unique_values)
@@ -439,6 +437,16 @@ def main():
 
             forecast_periods = st.number_input("Forecasting Period (days)", min_value=1, max_value=365, value=180)
 
+            forecast_button_css = """
+                <style>
+                .stButton > button {
+                    background-color: #32c800;
+                    color: black;
+                    font-weight: bold;
+                }
+                </style>
+            """
+            st.markdown(forecast_button_css, unsafe_allow_html=True)
             if st.button("Forecast Future"):
                 with st.spinner('Forecasting...'):
                     try:
@@ -460,7 +468,6 @@ def main():
                         st.error(f"Forecasting failed: {e}")
                         logging.error(f"Forecasting failed: {e}")
 
-            st.markdown('</div>', unsafe_allow_html=True)
         else:
             st.markdown('<div class="custom-error">The uploaded file does not contain a \'Timestamp\' column.</div>', unsafe_allow_html=True)
             st.write("### Debugging Information")
