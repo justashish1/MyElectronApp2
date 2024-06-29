@@ -85,18 +85,6 @@ def custom_css():
             .stProgress > div > div > div > div {
                 background-color: #32c800;
             }
-            .fixed-filter {
-                position: -webkit-sticky;
-                position: sticky;
-                top: 0;
-                background-color: white;
-                z-index: 100;
-                padding: 10px;
-                box-shadow: 0px 4px 2px -2px gray;
-            }
-            .content {
-                padding-top: 0px;
-            }
             .stButton > button {
                 background-color: #32c800;
                 border: none;
@@ -269,9 +257,8 @@ def main():
 
         df = preprocess_data(df)
 
-        if not df.empty:
-            # Wrapping the filter section in a fixed div
-            st.markdown('<div class="fixed-filter">', unsafe_allow_html=True)
+        if not df.empty():
+            # Filter section
             col1, col2, col3, col4, col5, col6 = st.columns(6)
 
             with col1:
@@ -294,7 +281,6 @@ def main():
 
             with col6:
                 sampling_interval = st.slider("Sampling Interval (minutes)", 1, 60, 1)
-            st.markdown('</div>', unsafe_allow_html=True)
 
             # Rest of the content
             st.markdown('<div class="content">', unsafe_allow_html=True)
