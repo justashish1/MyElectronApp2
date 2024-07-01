@@ -15,9 +15,10 @@ import plotly.express as px
 import seaborn as sns
 import logging
 from st_aggrid import AgGrid, GridOptionsBuilder
+import io
 
 # Set up logging
-logging.basicConfig(filename='app.log', level=logging.INFO, format='%(asctime)s %(message)s')
+logging.basicConfig(filename='app.log', level=logging.INFO, format='%(asctime)s %(levelname)s:%(message)s')
 logging.info('Application started')
 
 # Set the page configuration
@@ -111,6 +112,23 @@ def custom_css():
                 border-radius: 5px;
                 text-align: center;
                 font-weight: bold;
+            }
+            .dataframe-overview {
+                display: flex;
+                justify-content: space-between;
+                flex-wrap: wrap;
+            }
+            .dataframe-section {
+                flex: 1;
+                margin: 10px;
+                padding: 10px;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                background-color: #222;
+                color: white;
+            }
+            .dataframe-info {
+                white-space: pre-wrap;
             }
         </style>
     """, unsafe_allow_html=True)
@@ -293,6 +311,33 @@ def main():
             with col6:
                 sampling_interval = st.slider("Sampling Interval (minutes)", 1, 60, 1)
 
+            st.markdown("## DataFrame Overview")
+            st.markdown("<div class='dataframe-overview'>", unsafe_allow_html=True)
+            st.markdown("<div class='dataframe-section'>", unsafe_allow_html=True)
+            st.markdown("### Head")
+            st.write(df.head())
+            st.markdown("</div>", unsafe_allow_html=True)
+
+            st.markdown("<div class='dataframe-section dataframe-info'>", unsafe_allow_html=True)
+            st.markdown("### Info")
+            buffer = io.StringIO()
+            df.info(buf=buffer)
+            s = buffer.getvalue()
+            st.text(s)
+            st.markdown("</div>", unsafe_allow_html=True)
+
+            st.markdown("<div class='dataframe-section'>", unsafe_allow_html=True)
+            st.markdown("### Shape")
+            st.write(df.shape)
+            st.markdown("</div>", unsafe_allow_html=True)
+
+            st.markdown("<div class='dataframe-section'>", unsafe_allow_html=True)
+            st.markdown("### Size")
+            st.write(df.size)
+            st.markdown("</div>", unsafe_allow_html=True)
+
+            st.markdown("</div>", unsafe_allow_html=True)
+
             for col in df.select_dtypes(include=['category', 'object']).columns:
                 unique_values = df[col].unique()
                 selected_values = st.multiselect(f"Filter by {col}", unique_values, default=unique_values)
@@ -303,27 +348,6 @@ def main():
             mask = (df.index >= start_datetime) & (df.index <= end_datetime)
             filtered_df = df.loc[mask]
             resampled_df = get_resampled_df(filtered_df, sampling_interval)
-
-            # Display DataFrame Information
-            st.markdown("### DataFrame Overview")
-            overview_col1, overview_col2, overview_col3, overview_col4 = st.columns(4)
-
-            with overview_col1:
-                st.write("**Head**")
-                st.write(filtered_df.head())
-
-            with overview_col2:
-                st.write("**Info**")
-                buffer = st.empty()
-                filtered_df.info(buf=buffer)
-
-            with overview_col3:
-                st.write("**Shape**")
-                st.write(filtered_df.shape)
-
-            with overview_col4:
-                st.write("**Size**")
-                st.write(filtered_df.size)
 
             # Anomaly detection
             isolation_forest = IsolationForest(contamination=0.05)
@@ -468,7 +492,7 @@ def main():
 
             forecast_periods = st.number_input("Forecasting Period (days)", min_value=1, max_value=365, value=180)
 
-            if st.button("Forecast Future", key='forecast_button'):
+            if st.button("Forecast Future", help="Generate forecast for future data"):
                 with st.spinner('Forecasting...'):
                     try:
                         forecast = generate_forecast(resampled_df, value_column, forecast_periods)
@@ -488,6 +512,16 @@ def main():
                     except Exception as e:
                         st.error(f"Forecasting failed: {e}")
                         logging.error(f"Forecasting failed: {e}")
+
+            st.markdown('</div>', unsafe_allow_html=True)
+        else:
+            st.markdown('<div class="custom-error">The uploaded file does not contain a \'Timestamp\' column.</div>', unsafe_allow_html=True)
+            st.write("### Debugging Information")
+            st.write(df.head())  # Display the first few rows of the dataframe for debugging
+            logging.error("The uploaded file does not contain a 'Timestamp' column,The correct column name is Timestamp and format is YYYY-MM-DD HH:MM:SS.")
+    else:
+        st.write("Please upload a CSV or Excel file to get started.")
+        logging.info("Waiting for file upload.")
 
 if __name__ == "__main__":
     main()
