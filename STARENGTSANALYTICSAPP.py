@@ -3,6 +3,7 @@ import pandas as pd
 import base64
 import numpy as np
 import time
+import io
 from datetime import datetime
 from sklearn.linear_model import LinearRegression
 from sklearn.cluster import KMeans
@@ -15,7 +16,6 @@ import plotly.express as px
 import seaborn as sns
 import logging
 from st_aggrid import AgGrid, GridOptionsBuilder
-import io
 
 # Set up logging
 logging.basicConfig(filename='app.log', level=logging.INFO, format='%(asctime)s %(levelname)s:%(message)s')
@@ -89,8 +89,6 @@ def custom_css():
             .stButton > button {
                 background-color: #32c800;
                 border: none;
-                font-weight: bold;
-                color: black;
             }
             .stButton > button:hover {
                 background-color: #28a745;
@@ -261,6 +259,8 @@ def main():
         df = preprocess_data(df)
 
         if not df.empty:
+            # Filter section
+            st.markdown('<div>', unsafe_allow_html=True)
             col1, col2, col3, col4, col5, col6 = st.columns(6)
 
             with col1:
@@ -283,7 +283,11 @@ def main():
 
             with col6:
                 sampling_interval = st.slider("Sampling Interval (minutes)", 1, 60, 1)
+            st.markdown('</div>', unsafe_allow_html=True)
 
+            # Rest of the content
+            st.markdown('<div class="content">', unsafe_allow_html=True)
+            
             for col in df.select_dtypes(include=['category', 'object']).columns:
                 unique_values = df[col].unique()
                 selected_values = st.multiselect(f"Filter by {col}", unique_values, default=unique_values)
@@ -294,6 +298,21 @@ def main():
             mask = (df.index >= start_datetime) & (df.index <= end_datetime)
             filtered_df = df.loc[mask]
             resampled_df = get_resampled_df(filtered_df, sampling_interval)
+
+            # Add font size option
+            font_size = st.selectbox("Select text size", [10, 12, 14, 16, 18], index=1)
+
+            # Apply selected font size
+            st.markdown(
+                f"""
+                <style>
+                .stText, .stDataFrame {{
+                    font-size: {font_size}px;
+                }}
+                </style>
+                """,
+                unsafe_allow_html=True,
+            )
 
             st.markdown("## DataFrame Overview")
             col1, col2, col3, col4 = st.columns(4)
@@ -460,7 +479,7 @@ def main():
 
             forecast_periods = st.number_input("Forecasting Period (days)", min_value=1, max_value=365, value=180)
 
-            if st.button("Forecast Future"):
+            if st.button("Forecast Future", key="forecast_future"):
                 with st.spinner('Forecasting...'):
                     try:
                         forecast = generate_forecast(resampled_df, value_column, forecast_periods)
@@ -481,6 +500,7 @@ def main():
                         st.error(f"Forecasting failed: {e}")
                         logging.error(f"Forecasting failed: {e}")
 
+            st.markdown('</div>', unsafe_allow_html=True)
         else:
             st.markdown('<div class="custom-error">The uploaded file does not contain a \'Timestamp\' column.</div>', unsafe_allow_html=True)
             st.write("### Debugging Information")
