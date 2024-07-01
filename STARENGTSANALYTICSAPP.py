@@ -40,7 +40,7 @@ def custom_css():
         <style>
             .main-title {
                 font-size: 25px;
-                color: #FF0000;
+                color: #32c800;
                 text-align: center;
                 font-weight: bold;
             }
@@ -63,7 +63,7 @@ def custom_css():
                 position: relative;
                 top: 5px;
                 left: 10px;
-                color: #FF0000;
+                color: #32c800;
             }
             .center-text {
                 text-align: center;
@@ -80,11 +80,11 @@ def custom_css():
                 margin-bottom: 20px;
                 display: flex;
                 justify-content: space-between;
-                color: #FF0000;
+                color: #32c800;
                 align-items: center;
             }
             .stProgress > div > div > div > div {
-                background-color: #FF0000;
+                background-color: #32c800;
             }
             .fixed-filter {
                 position: -webkit-sticky;
@@ -99,7 +99,7 @@ def custom_css():
                 padding-top: 0px;
             }
             .stButton > button {
-                background-color: #FF0000;
+                background-color: #32c800;
                 border: none;
             }
             .stButton > button:hover {
@@ -249,7 +249,7 @@ def main():
         st.markdown("""
             <style>
                 .stProgress > div > div > div > div {
-                    background-color: #FF0000;
+                    background-color: #32c800;
                 }
             </style>
         """, unsafe_allow_html=True)
