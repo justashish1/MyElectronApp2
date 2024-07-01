@@ -526,14 +526,5 @@ def main():
         st.write("Please upload a CSV or Excel file to get started.")
         logging.info("Waiting for file upload.")
 
-    # Developer info at the bottom left
-    st.markdown("""
-        <div class='developer-info'>
-            Developer Name : Ashish Malviya<br>
-            E-mail : info@starengts.com<br>
-            Website: www.starengts.com<br>
-        </div>
-    """, unsafe_allow_html=True)
-
 if __name__ == "__main__":
     main()
