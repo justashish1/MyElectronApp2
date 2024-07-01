@@ -36,8 +36,8 @@ def load_logo(filename):
  # Developer info at the bottom right
 st.markdown("""
         <div class='developer-info'>
-            ashish Malviya<br>
-            info@starengts.com<br>
+            Developer Name : ashish Malviya<br>
+            Email ID : info@starengts.com<br>
             www.starengts.com
         </div>
     """, unsafe_allow_html=True    )
@@ -524,8 +524,8 @@ def main():
     # Developer info at the bottom right
     st.markdown("""
         <div class='developer-info'>
-            ashish Malviya<br>
-            info@starengts.com<br>
+            Developer Name : ashish Malviya<br>
+            Email ID: info@starengts.com<br>
             www.starengts.com
         </div>
     """, unsafe_allow_html=True)
