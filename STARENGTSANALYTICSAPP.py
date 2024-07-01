@@ -17,7 +17,7 @@ import logging
 from st_aggrid import AgGrid, GridOptionsBuilder
 
 # Set up logging
-logging.basicConfig(filename='app.log', level=logging.INFO, format='%(asctime)s %(levelname)s:%(message)s')
+logging.basicConfig(filename='app.log', level=logging.INFO, format='%(asctime)s %(message)s')
 logging.info('Application started')
 
 # Set the page configuration
@@ -85,11 +85,21 @@ def custom_css():
             .stProgress > div > div > div > div {
                 background-color: #32c800;
             }
+            .fixed-filter {
+                position: -webkit-sticky;
+                position: sticky;
+                top: 0;
+                background-color: white;
+                z-index: 100;
+                padding: 10px;
+                box-shadow: 0px 4px 2px -2px gray;
+            }
+            .content {
+                padding-top: 0px;
+            }
             .stButton > button {
                 background-color: #32c800;
                 border: none;
-                color: black;
-                font-weight: bold;
             }
             .stButton > button:hover {
                 background-color: #28a745;
@@ -294,6 +304,27 @@ def main():
             filtered_df = df.loc[mask]
             resampled_df = get_resampled_df(filtered_df, sampling_interval)
 
+            # Display DataFrame Information
+            st.markdown("### DataFrame Overview")
+            overview_col1, overview_col2, overview_col3, overview_col4 = st.columns(4)
+
+            with overview_col1:
+                st.write("**Head**")
+                st.write(filtered_df.head())
+
+            with overview_col2:
+                st.write("**Info**")
+                buffer = st.empty()
+                filtered_df.info(buf=buffer)
+
+            with overview_col3:
+                st.write("**Shape**")
+                st.write(filtered_df.shape)
+
+            with overview_col4:
+                st.write("**Size**")
+                st.write(filtered_df.size)
+
             # Anomaly detection
             isolation_forest = IsolationForest(contamination=0.05)
             anomalies = isolation_forest.fit_predict(resampled_df[[value_column]])
@@ -437,17 +468,7 @@ def main():
 
             forecast_periods = st.number_input("Forecasting Period (days)", min_value=1, max_value=365, value=180)
 
-            forecast_button_css = """
-                <style>
-                .stButton > button {
-                    background-color: #32c800;
-                    color: black;
-                    font-weight: bold;
-                }
-                </style>
-            """
-            st.markdown(forecast_button_css, unsafe_allow_html=True)
-            if st.button("Forecast Future"):
+            if st.button("Forecast Future", key='forecast_button'):
                 with st.spinner('Forecasting...'):
                     try:
                         forecast = generate_forecast(resampled_df, value_column, forecast_periods)
@@ -467,15 +488,6 @@ def main():
                     except Exception as e:
                         st.error(f"Forecasting failed: {e}")
                         logging.error(f"Forecasting failed: {e}")
-
-        else:
-            st.markdown('<div class="custom-error">The uploaded file does not contain a \'Timestamp\' column.</div>', unsafe_allow_html=True)
-            st.write("### Debugging Information")
-            st.write(df.head())  # Display the first few rows of the dataframe for debugging
-            logging.error("The uploaded file does not contain a 'Timestamp' column,The correct column name is Timestamp and format is YYYY-MM-DD HH:MM:SS.")
-    else:
-        st.write("Please upload a CSV or Excel file to get started.")
-        logging.info("Waiting for file upload.")
 
 if __name__ == "__main__":
     main()
