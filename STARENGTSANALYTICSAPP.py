@@ -22,7 +22,7 @@ logging.basicConfig(filename='app.log', level=logging.INFO, format='%(asctime)s 
 logging.info('Application started')
 
 # Set the page configuration
-st.set_page_config(page_title="STARENGTS Timeseries Analysis Application", layout="wide")
+st.set_page_config(page_title="HENKEL Timeseries Analysis Application", layout="wide")
 
 # Generate time options
 def generate_time_options():
@@ -38,8 +38,6 @@ def load_logo(filename):
 st.markdown("""
         <div class='developer-info'>
             Developer Name : Ashish Malviya<br>
-            E-mail : info@starengts.com<br>
-            Website: www.starengts.com<br>
         </div>
     """, unsafe_allow_html=True)
 
@@ -49,7 +47,7 @@ def custom_css():
         <style>
             .main-title {
                 font-size: 25px;
-                color: #32c800;
+                color: #FF0000;
                 text-align: center;
                 font-weight: bold;
             }
@@ -72,7 +70,7 @@ def custom_css():
                 position: relative;
                 top: 5px;
                 left: 10px;
-                color: #32c800;
+                color: #FF0000;
             }
             .center-text {
                 text-align: center;
@@ -89,7 +87,7 @@ def custom_css():
                 margin-bottom: 20px;
                 display: flex;
                 justify-content: space-between;
-                color: #32c800;
+                color: #FF0000;
                 align-items: center;
             }
             .developer-info {
@@ -101,23 +99,23 @@ def custom_css():
                 font-size: 12px;
             }
             .stProgress > div > div > div > div {
-                background-color: #32c800;
+                background-color: #FF0000;
             }
             .content {
                 padding-top: 0px;
             }
             .stButton > button {
-                background-color: #32c800;
+                background-color: #FF0000;
                 color: white;
                 border: none;
                 font-weight: bold;
             }
             .stButton > button:hover {
                 color: white;
-                background-color: #32c800;
+                background-color: #FF0000;
             }
             .custom-error {
-                background-color: #32c800;
+                background-color: #FF0000;
                 color: white;
                 padding: 10px;
                 border-radius: 5px;
@@ -231,7 +229,7 @@ def generate_forecast(df, value_column, periods):
     forecast = model.predict(future)
     return forecast
 
-# Display data using st-aggrid
+# Display data using streamlit-aggrid
 def display_aggrid(df):
     gb = GridOptionsBuilder.from_dataframe(df)
     gb.configure_pagination(paginationAutoPageSize=True) # Add pagination
@@ -252,7 +250,7 @@ def main():
     logo_src = load_logo('logo.png')
     display_logo_and_time(logo_src)
     add_js_script()
-    st.markdown("<h1 class='main-title'>STARENGTS TIMESERIES ANALYSIS APPLICATION</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 class='main-title'>HENKEL TIMESERIES ANALYSIS APPLICATION</h1>", unsafe_allow_html=True)
 
     if 'authenticated' not in st.session_state:
         st.session_state.authenticated = False
@@ -273,7 +271,7 @@ def main():
         st.markdown("""
             <style>
                 .stProgress > div > div > div > div {
-                    background-color: #32c800;
+                    background-color: #FF0000;
                 }
             </style>
         """, unsafe_allow_html=True)
@@ -525,6 +523,13 @@ def main():
     else:
         st.write("Please upload a CSV or Excel file to get started.")
         logging.info("Waiting for file upload.")
+
+    # Developer info at the bottom left
+    st.markdown("""
+        <div class='developer-info'>
+            Developer Name : Ashish Malviya<br>
+        </div>
+    """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
