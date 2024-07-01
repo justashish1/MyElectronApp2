@@ -16,6 +16,7 @@ import seaborn as sns
 import logging
 from st_aggrid import AgGrid, GridOptionsBuilder
 import io
+import os
 
 # Set up logging
 logging.basicConfig(filename='app.log', level=logging.INFO, format='%(asctime)s %(levelname)s:%(message)s')
@@ -38,7 +39,7 @@ def load_logo(filename):
 # Developer info at the bottom left
 st.markdown("""
         <div class='developer-info'>
-            Developer Name : Ashish Malviya E-mail : info@starengts.com website : www.starengts.com<br>
+            Developer Name : Ashish Malviya<br>
         </div>
     """, unsafe_allow_html=True)
 
@@ -135,6 +136,19 @@ def custom_css():
             }
             .df-shape-size {
                 color: black;
+            }
+            .download-manual {
+                font-size: 18px;
+                font-weight: bold;
+            }
+            .additional-visualizations {
+                font-size: 20px;
+                font-weight: bold;
+                margin-top: 20px;
+            }
+            .histogram, .user-annotations, .advanced-analytics, .correlation-heatmap, .pair-plot {
+                font-size: 18px;
+                font-weight: bold;
             }
         </style>
     """, unsafe_allow_html=True)
@@ -248,6 +262,19 @@ def display_aggrid(df):
         width='100%',
         fit_columns_on_grid_load=True
     )
+
+# Function to download the manual
+def download_manual():
+    manual_path = "Applications_manual.pdf"  # File in the same directory
+    if os.path.exists(manual_path):
+        with open(manual_path, "rb") as file:
+            manual_data = file.read()
+        file_name = os.path.basename(manual_path)
+        b64 = base64.b64encode(manual_data).decode()
+        href = f'<a href="data:application/pdf;base64,{b64}" download="{file_name}">Download Manual: {file_name}</a>'
+        st.markdown(href, unsafe_allow_html=True)
+    else:
+        st.warning("Manual not available. Send request to Ashish Malviya!")
 
 # Main function
 def main():
@@ -454,8 +481,9 @@ def main():
             st.markdown(stats_output)
             logging.info("Descriptive statistics generated.")
 
-            st.write("## Additional Visualizations")
-            st.write("### Histogram")
+            st.markdown("<div class='additional-visualizations'>Additional Visualizations</div>", unsafe_allow_html=True)
+
+            st.markdown("<div class='histogram'>Histogram</div>", unsafe_allow_html=True)
             fig_hist = go.Figure()
             colors = px.colors.qualitative.Plotly
 
@@ -469,13 +497,13 @@ def main():
             logging.info("Histogram generated.")
             st.markdown("**The histogram visualizes the distribution of the data for each numeric column in the dataset.**")
 
-            st.write("### Pair Plot")
+            st.markdown("<div class='pair-plot'>Pair Plot</div>", unsafe_allow_html=True)
             pair_plot_fig = sns.pairplot(df.select_dtypes(include=[np.number]), diag_kind='kde')
             st.pyplot(pair_plot_fig)
             logging.info("Pair plot generated.")
             st.markdown("**The pair plot displays pairwise relationships in the dataset, showing scatter plots for each pair of features and histograms for individual features.**")
 
-            st.write("### Correlation Heatmap")
+            st.markdown("<div class='correlation-heatmap'>Correlation Heatmap</div>", unsafe_allow_html=True)
             corr = df.corr()
             fig_heatmap = go.Figure(data=go.Heatmap(z=corr.values, x=corr.index.values, y=corr.columns.values, colorscale='Viridis'))
             fig_heatmap.update_layout(title='Correlation Heatmap')
@@ -483,7 +511,7 @@ def main():
             logging.info("Correlation heatmap generated.")
             st.markdown("**The correlation heatmap displays the correlation coefficients between pairs of features in the dataset. The colors represent the strength of the correlations.**")
 
-            st.write("### User Annotations")
+            st.markdown("<div class='user-annotations'>User Annotations</div>", unsafe_allow_html=True)
             annotation_text = st.text_input("Enter annotation text")
             annotation_x = st.text_input("Enter x value for annotation")
             annotation_y = st.text_input("Enter y value for annotation")
@@ -491,7 +519,7 @@ def main():
                 fig.add_trace(go.Scatter(x=[annotation_x], y=[annotation_y], mode='text', text=[annotation_text], name='Annotation'))
                 st.plotly_chart(fig)
 
-            st.write("### Advanced Analytics")
+            st.markdown("<div class='advanced-analytics'>Advanced Analytics</div>", unsafe_allow_html=True)
             degree = st.slider("Degree of Polynomial Regression", 1, 10, 2)
             poly_features = np.polyfit(X.flatten(), y, degree)
             poly_model = np.poly1d(poly_features)
@@ -523,6 +551,9 @@ def main():
                         logging.error(f"Forecasting failed: {e}")
 
             st.markdown('</div>', unsafe_allow_html=True)
+
+            st.markdown("<div class='download-manual'>Download Manual</div>", unsafe_allow_html=True)
+            download_manual()
         else:
             st.markdown('<div class="custom-error">The uploaded file does not contain a \'DateTime\' column.</div>', unsafe_allow_html=True)
             st.write("### Debugging Information")
