@@ -33,6 +33,15 @@ def load_logo(filename):
     with open(filename, "rb") as image_file:
         encoded_image = base64.b64encode(image_file.read()).decode()
     return f"data:image/png;base64,{encoded_image}"
+ # Developer info at the bottom right
+st.markdown("""
+        <div class='developer-info'>
+            ashish Malviya<br>
+            info@starengts.com<br>
+            www.starengts.com
+        </div>
+    """, unsafe_allow_html=True    )
+
 
 # Custom CSS for styling
 def custom_css():
@@ -77,23 +86,22 @@ def custom_css():
             .header {
                 position: relative;
                 width: 100%;
-                margin-bottom: 30px;
+                margin-bottom: 20px;
                 display: flex;
                 justify-content: space-between;
                 color: #32c800;
                 align-items: center;
             }
+            .developer-info {
+                position: fixed;
+                bottom: 0;
+                right: 0;
+                text-align: right;
+                margin: 10px;
+                font-size: 12px;
+            }
             .stProgress > div > div > div > div {
                 background-color: #32c800;
-            }
-            .fixed-filter {
-                position: -webkit-sticky;
-                position: sticky;
-                top: 0;
-                background-color: white;
-                z-index: 100;
-                padding: 10px;
-                box-shadow: 0px 4px 2px -2px gray;
             }
             .content {
                 padding-top: 0px;
@@ -101,6 +109,7 @@ def custom_css():
             .stButton > button {
                 background-color: #32c800;
                 border: none;
+                font-weight: bold;
             }
             .stButton > button:hover {
                 background-color: #28a745;
@@ -112,6 +121,16 @@ def custom_css():
                 border-radius: 5px;
                 text-align: center;
                 font-weight: bold;
+            }
+            .df-overview-title {
+                font-size: 12px;
+                font-weight: bold;
+                color: black;
+            }
+            .df-overview-section {
+                font-size: 12px;
+                font-weight: bold;
+                color: black;
             }
         </style>
     """, unsafe_allow_html=True)
@@ -294,26 +313,27 @@ def main():
             with col6:
                 sampling_interval = st.slider("Sampling Interval (minutes)", 1, 60, 1)
 
-            st.markdown("## DataFrame Overview")
-            col1, col2, col3, col4 = st.columns([4, 2, 2, 2])
+            st.markdown("<div class='df-overview-title'style='font-size:16px;'>DataFrame Overview</div>", unsafe_allow_html=True)
+            
+            # Row 1: Full-width Head
+            st.markdown("<div class='df-overview-section'style='font-size:14px;'>Head</div>", unsafe_allow_html=True)
+            st.write(df.head())
 
+            # Row 2: Full-width Info
+            st.markdown("<div class='df-overview-section'style='font-size:14px;'>Info</div>", unsafe_allow_html=True)
+            buffer = io.StringIO()
+            df.info(buf=buffer)
+            s = buffer.getvalue()
+            st.text(s)
+
+            # Row 3: Half-width Shape and Size
+            col1, col2 = st.columns(2)
             with col1:
-                st.write("### Head")
-                st.write(df.head())
-
-            with col2:
-                st.write("### Info")
-                buffer = io.StringIO()
-                df.info(buf=buffer)
-                s = buffer.getvalue()
-                st.text(s)
-
-            with col3:
-                st.write("### Shape")
+                st.markdown("<div class='df-overview-section'style='font-size:14px;'>Shape</div>", unsafe_allow_html=True)
                 st.write(df.shape)
 
-            with col4:
-                st.write("### Size")
+            with col2:
+                st.markdown("<div class='df-overview-section'>Size</div>", unsafe_allow_html=True)
                 st.write(df.size)
 
             for col in df.select_dtypes(include=['category', 'object']).columns:
@@ -500,6 +520,15 @@ def main():
     else:
         st.write("Please upload a CSV or Excel file to get started.")
         logging.info("Waiting for file upload.")
+
+    # Developer info at the bottom right
+    st.markdown("""
+        <div class='developer-info'>
+            ashish Malviya<br>
+            info@starengts.com<br>
+            www.starengts.com
+        </div>
+    """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
