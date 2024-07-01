@@ -3,7 +3,6 @@ import pandas as pd
 import base64
 import numpy as np
 import time
-import io
 from datetime import datetime
 from sklearn.linear_model import LinearRegression
 from sklearn.cluster import KMeans
@@ -16,6 +15,7 @@ import plotly.express as px
 import seaborn as sns
 import logging
 from st_aggrid import AgGrid, GridOptionsBuilder
+import io
 
 # Set up logging
 logging.basicConfig(filename='app.log', level=logging.INFO, format='%(asctime)s %(levelname)s:%(message)s')
@@ -85,6 +85,18 @@ def custom_css():
             }
             .stProgress > div > div > div > div {
                 background-color: #32c800;
+            }
+            .fixed-filter {
+                position: -webkit-sticky;
+                position: sticky;
+                top: 0;
+                background-color: white;
+                z-index: 100;
+                padding: 10px;
+                box-shadow: 0px 4px 2px -2px gray;
+            }
+            .content {
+                padding-top: 0px;
             }
             .stButton > button {
                 background-color: #32c800;
@@ -259,8 +271,6 @@ def main():
         df = preprocess_data(df)
 
         if not df.empty:
-            # Filter section
-            st.markdown('<div>', unsafe_allow_html=True)
             col1, col2, col3, col4, col5, col6 = st.columns(6)
 
             with col1:
@@ -283,11 +293,29 @@ def main():
 
             with col6:
                 sampling_interval = st.slider("Sampling Interval (minutes)", 1, 60, 1)
-            st.markdown('</div>', unsafe_allow_html=True)
 
-            # Rest of the content
-            st.markdown('<div class="content">', unsafe_allow_html=True)
-            
+            st.markdown("## DataFrame Overview")
+            col1, col2, col3, col4 = st.columns([4, 2, 2, 2])
+
+            with col1:
+                st.write("### Head")
+                st.write(df.head())
+
+            with col2:
+                st.write("### Info")
+                buffer = io.StringIO()
+                df.info(buf=buffer)
+                s = buffer.getvalue()
+                st.text(s)
+
+            with col3:
+                st.write("### Shape")
+                st.write(df.shape)
+
+            with col4:
+                st.write("### Size")
+                st.write(df.size)
+
             for col in df.select_dtypes(include=['category', 'object']).columns:
                 unique_values = df[col].unique()
                 selected_values = st.multiselect(f"Filter by {col}", unique_values, default=unique_values)
@@ -298,43 +326,6 @@ def main():
             mask = (df.index >= start_datetime) & (df.index <= end_datetime)
             filtered_df = df.loc[mask]
             resampled_df = get_resampled_df(filtered_df, sampling_interval)
-
-            # Add font size option
-            font_size = st.selectbox("Select text size", [10, 12, 14, 16, 18], index=1)
-
-            # Apply selected font size
-            st.markdown(
-                f"""
-                <style>
-                .stText, .stDataFrame {{
-                    font-size: {font_size}px;
-                }}
-                </style>
-                """,
-                unsafe_allow_html=True,
-            )
-
-            st.markdown("## DataFrame Overview")
-            col1, col2, col3, col4 = st.columns(4)
-
-            with col1:
-                st.write("### Head")
-                st.write(resampled_df.head())
-
-            with col2:
-                st.write("### Info")
-                buffer = io.StringIO()
-                resampled_df.info(buf=buffer)
-                s = buffer.getvalue()
-                st.text(s)
-
-            with col3:
-                st.write("### Shape")
-                st.write(resampled_df.shape)
-
-            with col4:
-                st.write("### Size")
-                st.write(resampled_df.size)
 
             # Anomaly detection
             isolation_forest = IsolationForest(contamination=0.05)
@@ -479,7 +470,7 @@ def main():
 
             forecast_periods = st.number_input("Forecasting Period (days)", min_value=1, max_value=365, value=180)
 
-            if st.button("Forecast Future", key="forecast_future"):
+            if st.button("Forecast Future"):
                 with st.spinner('Forecasting...'):
                     try:
                         forecast = generate_forecast(resampled_df, value_column, forecast_periods)
