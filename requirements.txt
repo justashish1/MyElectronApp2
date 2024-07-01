@@ -11,3 +11,4 @@ openpyxl==3.1.0
 pytest
 langchain
 chart-studio
+st-aggrid==1.0.5
