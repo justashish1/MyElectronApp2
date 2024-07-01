@@ -77,7 +77,7 @@ def custom_css():
             .header {
                 position: relative;
                 width: 100%;
-                margin-bottom: 20px;
+                margin-bottom: 30px;
                 display: flex;
                 justify-content: space-between;
                 color: #32c800;
