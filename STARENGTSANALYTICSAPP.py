@@ -22,26 +22,24 @@ logging.basicConfig(filename='app.log', level=logging.INFO, format='%(asctime)s 
 logging.info('Application started')
 
 # Set the page configuration
-st.set_page_config(page_title="Starengts Timeseries Analysis Application", layout="wide")
+st.set_page_config(page_title="STARENGTS Timeseries Analysis Application", layout="wide")
 
 # Generate time options
 def generate_time_options():
-    return [f"{hour:02d}:{minute:02d}:00" for hour in range(24) for minute in range(60)]
+    return [f"{hour:02d}:{minute:02d}:{second:02d}" for hour in range(24) for minute in range(60) for second in range(60)]
 
 # Load logo as base64
 def load_logo(filename):
     with open(filename, "rb") as image_file:
         encoded_image = base64.b64encode(image_file.read()).decode()
     return f"data:image/png;base64,{encoded_image}"
- # Developer info at the bottom right
+
+# Developer info at the bottom left
 st.markdown("""
         <div class='developer-info'>
-            Developer Name : ashish Malviya<br>
-            Email ID : info@starengts.com<br>
-            www.starengts.com
+            Developer Name : Ashish Malviya<br>
         </div>
-    """, unsafe_allow_html=True    )
-
+    """, unsafe_allow_html=True)
 
 # Custom CSS for styling
 def custom_css():
@@ -78,7 +76,7 @@ def custom_css():
                 text-align: center;
             }
             .logo {
-                height: 35px;
+                height: 45px;
                 display: inline-block;
                 margin-left: auto;
                 margin-right: 10px;
@@ -95,8 +93,8 @@ def custom_css():
             .developer-info {
                 position: fixed;
                 bottom: 0;
-                right: 0;
-                text-align: right;
+                left: 0;
+                text-align:left;
                 margin: 10px;
                 font-size: 12px;
             }
@@ -108,14 +106,16 @@ def custom_css():
             }
             .stButton > button {
                 background-color: #32c800;
+                color: white;
                 border: none;
                 font-weight: bold;
             }
             .stButton > button:hover {
-                background-color: #28a745;
+                color: white;
+                background-color: #32c800;
             }
             .custom-error {
-                background-color: #ff4c4c;
+                background-color: #32c800;
                 color: white;
                 padding: 10px;
                 border-radius: 5px;
@@ -132,10 +132,13 @@ def custom_css():
                 font-weight: bold;
                 color: black;
             }
+            .df-shape-size {
+                color: black;
+            }
         </style>
     """, unsafe_allow_html=True)
 
-# Get the current time as a string
+# Get the current time as a string for the clock
 def get_time():
     return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
@@ -187,25 +190,25 @@ def load_data(uploaded_file):
 # Preprocess data
 @st.cache_data
 def preprocess_data(df):
-    if 'Timestamp' in df.columns:
-        df['Timestamp'] = pd.to_datetime(df['Timestamp'], errors='coerce')
-        df = df.dropna(subset=['Timestamp'])
-        df.set_index('Timestamp', inplace=True)
+    if 'DateTime' in df.columns:
+        df['DateTime'] = pd.to_datetime(df['DateTime'], format='%d/%m/%Y %I:%M:%S.%f %p', errors='coerce')
+        df = df.dropna(subset=['DateTime'])
+        df.set_index('DateTime', inplace=True)
     return df
 
-# Validate 'Timestamp' column and format
-def validate_timestamp_column(df):
-    if 'Timestamp' not in df.columns:
-        st.markdown('<div class="custom-error">The uploaded file does not contain a \'Timestamp\' column The correct column name is Timestamp and format is YYYY-MM-DD HH:MM:SS.</div>', unsafe_allow_html=True)
-        logging.error("The uploaded file does not contain a 'Timestamp' column, The correct column name is Timestamp and format is YYYY-MM-DD HH:MM:SS")
+# Validate 'DateTime' column and format
+def validate_datetime_column(df):
+    if 'DateTime' not in df.columns:
+        st.markdown('<div class="custom-error">The uploaded file does not contain a \'DateTime\' column The correct column name is DateTime and format is DD/MM/YYYY hh:mm:ss.SSS AM/PM.</div>', unsafe_allow_html=True)
+        logging.error("The uploaded file does not contain a 'DateTime' column, The correct column name is DateTime and format is DD/MM/YYYY hh:mm:ss.SSS AM/PM")
         st.write("### Debugging Information")
         st.write(df.head())  # Display the first few rows of the dataframe for debugging
         return False
     try:
-        pd.to_datetime(df['Timestamp'], format='%Y-%m-%d %H:%M:%S')
+        pd.to_datetime(df['DateTime'], format='%d/%m/%Y %I:%M:%S.%f %p')
     except ValueError:
-        st.markdown('<div class="custom-error">The \'Timestamp\' column is not in the correct datetime format (YYYY-MM-DD HH:MM:SS).</div>', unsafe_allow_html=True)
-        logging.error("The 'Timestamp' column is not in the correct datetime format (YYYY-MM-DD HH:MM:SS).")
+        st.markdown('<div class="custom-error">The \'DateTime\' column is not in the correct datetime format (DD/MM/YYYY hh:mm:ss.SSS AM/PM).</div>', unsafe_allow_html=True)
+        logging.error("The 'DateTime' column is not in the correct datetime format (DD/MM/YYYY hh:mm:ss.SSS AM/PM).")
         st.write("### Debugging Information")
         st.write(df.head())  # Display the first few rows of the dataframe for debugging
         return False
@@ -219,7 +222,7 @@ def get_resampled_df(filtered_df, sampling_interval):
 # Generate forecast using Prophet
 def generate_forecast(df, value_column, periods):
     df.reset_index(inplace=True)
-    df.rename(columns={'Timestamp': 'ds', value_column: 'y'}, inplace=True)
+    df.rename(columns={'DateTime': 'ds', value_column: 'y'}, inplace=True)
     model = Prophet(daily_seasonality=True)
     model.fit(df)
     future = model.make_future_dataframe(periods=periods)
@@ -284,7 +287,7 @@ def main():
         st.write(f"Loaded file: {uploaded_file.name} (Total processing time: {loading_time:.2f} seconds)")
         logging.info(f"Loaded file: {uploaded_file.name} (Total processing time: {loading_time:.2f} seconds)")
 
-        if not validate_timestamp_column(df):
+        if not validate_datetime_column(df):
             return
 
         df = preprocess_data(df)
@@ -308,7 +311,7 @@ def main():
                 end_time_str = st.selectbox("End Time", time_options, index=end_time_index)
 
             with col5:
-                value_column = st.selectbox("Value Column", [col for col in df.columns if col != 'Timestamp'])
+                value_column = st.selectbox("Value Column", [col for col in df.columns if col != 'DateTime'])
 
             with col6:
                 sampling_interval = st.slider("Sampling Interval (minutes)", 1, 60, 1)
@@ -330,11 +333,11 @@ def main():
             col1, col2 = st.columns(2)
             with col1:
                 st.markdown("<div class='df-overview-section'style='font-size:14px;'>Shape</div>", unsafe_allow_html=True)
-                st.write(df.shape)
+                st.markdown(f"<div class='df-shape-size'>{df.shape}</div>", unsafe_allow_html=True)
 
             with col2:
                 st.markdown("<div class='df-overview-section'>Size</div>", unsafe_allow_html=True)
-                st.write(df.size)
+                st.markdown(f"<div class='df-shape-size'>{df.size}</div>", unsafe_allow_html=True)
 
             for col in df.select_dtypes(include=['category', 'object']).columns:
                 unique_values = df[col].unique()
@@ -370,7 +373,7 @@ def main():
 
             fig.add_trace(go.Scatter(x=resampled_df.index, y=y_pred, mode='lines', line=dict(color='green', dash='dash'), name='Regression Line'))
 
-            fig.update_layout(title='Time Series Data with Inactivity Periods, Anomalies, and Regression Line', xaxis_title='Timestamp', yaxis_title=value_column)
+            fig.update_layout(title='Time Series Data with Inactivity Periods, Anomalies, and Regression Line', xaxis_title='DateTime', yaxis_title=value_column)
             st.plotly_chart(fig)
             st.markdown("**The time series plot displays the data over time, with blue lines representing active periods, red lines indicating inactivity periods, and orange markers highlighting anomalies. The green dashed line shows the linear regression line, which helps identify the overall trend in the data.**")
 
@@ -394,7 +397,7 @@ def main():
             control_chart_fig = go.Figure()
             control_chart_fig.add_trace(go.Scatter(x=resampled_df.index, y=resampled_df[value_column], mode='lines', name='Load cell Value', line=dict(color='blue')))
             control_chart_fig.add_trace(go.Scatter(x=resampled_df.index, y=resampled_df[value_column].rolling(window=30).std(), mode='lines', name='Rolling Std', line=dict(color='orange'), yaxis='y2'))
-            control_chart_fig.update_layout(title='Control Charts (X-bar and R charts)', xaxis_title='Timestamp', yaxis=dict(title=value_column), yaxis2=dict(title='Standard Deviation', overlaying='y', side='right'))
+            control_chart_fig.update_layout(title='Control Charts (X-bar and R charts)', xaxis_title='DateTime', yaxis=dict(title=value_column), yaxis2=dict(title='Standard Deviation', overlaying='y', side='right'))
             st.plotly_chart(control_chart_fig, use_container_width=True)
             st.markdown("**The control chart monitors the process stability over time. The X-bar chart shows the mean of the process, and the R chart displays the range of the process variation. These charts help identify any unusual variations in the process.**")
 
@@ -413,7 +416,7 @@ def main():
                 cluster_data = resampled_df[resampled_df['Cluster'] == cluster]
                 cluster_fig.add_trace(go.Scatter(x=cluster_data.index, y=cluster_data[value_column], mode='markers', marker=dict(color=colors[cluster]), name=f'Cluster {cluster}'))
 
-            cluster_fig.update_layout(title=f'KMeans Clustering (Silhouette Score: {silhouette_avg})', xaxis_title='Timestamp', yaxis_title=value_column)
+            cluster_fig.update_layout(title=f'KMeans Clustering (Silhouette Score: {silhouette_avg})', xaxis_title='DateTime', yaxis_title=value_column)
             st.plotly_chart(cluster_fig, use_container_width=True)
             st.markdown("**The clustering plot uses KMeans to group the data into clusters. Each color represents a different cluster, helping to identify patterns and similarities within the data. The silhouette score indicates how well the data points fit within their clusters, with higher values representing better clustering.**")
 
@@ -513,20 +516,18 @@ def main():
 
             st.markdown('</div>', unsafe_allow_html=True)
         else:
-            st.markdown('<div class="custom-error">The uploaded file does not contain a \'Timestamp\' column.</div>', unsafe_allow_html=True)
+            st.markdown('<div class="custom-error">The uploaded file does not contain a \'DateTime\' column.</div>', unsafe_allow_html=True)
             st.write("### Debugging Information")
             st.write(df.head())  # Display the first few rows of the dataframe for debugging
-            logging.error("The uploaded file does not contain a 'Timestamp' column,The correct column name is Timestamp and format is YYYY-MM-DD HH:MM:SS.")
+            logging.error("The uploaded file does not contain a 'DateTime' column,The correct column name is DateTime and format is DD/MM/YYYY hh:mm:ss.SSS AM/PM.")
     else:
         st.write("Please upload a CSV or Excel file to get started.")
         logging.info("Waiting for file upload.")
 
-    # Developer info at the bottom right
+    # Developer info at the bottom left
     st.markdown("""
         <div class='developer-info'>
-            Developer Name : ashish Malviya<br>
-            Email ID: info@starengts.com<br>
-            www.starengts.com
+            Developer Name : Ashish Malviya<br>
         </div>
     """, unsafe_allow_html=True)
 
