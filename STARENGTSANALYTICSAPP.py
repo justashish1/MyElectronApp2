@@ -15,6 +15,7 @@ import plotly.express as px
 import seaborn as sns
 import logging
 from st_aggrid import AgGrid, GridOptionsBuilder
+import io
 
 # Set up logging
 logging.basicConfig(filename='app.log', level=logging.INFO, format='%(asctime)s %(levelname)s:%(message)s')
@@ -85,22 +86,11 @@ def custom_css():
             .stProgress > div > div > div > div {
                 background-color: #32c800;
             }
-            .fixed-filter {
-                position: -webkit-sticky;
-                position: sticky;
-                top: 0;
-                background-color: white;
-                z-index: 100;
-                padding: 10px;
-                box-shadow: 0px 4px 2px -2px gray;
-            }
-            .content {
-                padding-top: 0px;
-            }
             .stButton > button {
                 background-color: #32c800;
                 border: none;
                 font-weight: bold;
+                color: black;
             }
             .stButton > button:hover {
                 background-color: #28a745;
@@ -294,24 +284,6 @@ def main():
             with col6:
                 sampling_interval = st.slider("Sampling Interval (minutes)", 1, 60, 1)
 
-            st.markdown("<h2 class='main-title'>DataFrame Overview</h2>", unsafe_allow_html=True)
-            col1, col2, col3, col4 = st.columns(4)
-            with col1:
-                st.write("**Head**")
-                st.write(df.head())
-            with col2:
-                st.write("**Info**")
-                buffer = io.StringIO()
-                df.info(buf=buffer)
-                s = buffer.getvalue()
-                st.text(s)
-            with col3:
-                st.write("**Shape**")
-                st.write(df.shape)
-            with col4:
-                st.write("**Size**")
-                st.write(df.size)
-
             for col in df.select_dtypes(include=['category', 'object']).columns:
                 unique_values = df[col].unique()
                 selected_values = st.multiselect(f"Filter by {col}", unique_values, default=unique_values)
@@ -322,6 +294,28 @@ def main():
             mask = (df.index >= start_datetime) & (df.index <= end_datetime)
             filtered_df = df.loc[mask]
             resampled_df = get_resampled_df(filtered_df, sampling_interval)
+
+            st.markdown("## DataFrame Overview")
+            col1, col2, col3, col4 = st.columns(4)
+
+            with col1:
+                st.write("### Head")
+                st.write(resampled_df.head())
+
+            with col2:
+                st.write("### Info")
+                buffer = io.StringIO()
+                resampled_df.info(buf=buffer)
+                s = buffer.getvalue()
+                st.text(s)
+
+            with col3:
+                st.write("### Shape")
+                st.write(resampled_df.shape)
+
+            with col4:
+                st.write("### Size")
+                st.write(resampled_df.size)
 
             # Anomaly detection
             isolation_forest = IsolationForest(contamination=0.05)
