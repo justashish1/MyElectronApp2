@@ -15,7 +15,6 @@ import plotly.express as px
 import seaborn as sns
 import logging
 from st_aggrid import AgGrid, GridOptionsBuilder
-import io
 
 # Set up logging
 logging.basicConfig(filename='app.log', level=logging.INFO, format='%(asctime)s %(levelname)s:%(message)s')
@@ -101,6 +100,7 @@ def custom_css():
             .stButton > button {
                 background-color: #32c800;
                 border: none;
+                font-weight: bold;
             }
             .stButton > button:hover {
                 background-color: #28a745;
@@ -112,23 +112,6 @@ def custom_css():
                 border-radius: 5px;
                 text-align: center;
                 font-weight: bold;
-            }
-            .dataframe-overview {
-                display: flex;
-                justify-content: space-between;
-                flex-wrap: wrap;
-            }
-            .dataframe-section {
-                flex: 1;
-                margin: 10px;
-                padding: 10px;
-                border: 1px solid #ddd;
-                border-radius: 5px;
-                background-color: #222;
-                color: white;
-            }
-            .dataframe-info {
-                white-space: pre-wrap;
             }
         </style>
     """, unsafe_allow_html=True)
@@ -311,32 +294,23 @@ def main():
             with col6:
                 sampling_interval = st.slider("Sampling Interval (minutes)", 1, 60, 1)
 
-            st.markdown("## DataFrame Overview")
-            st.markdown("<div class='dataframe-overview'>", unsafe_allow_html=True)
-            st.markdown("<div class='dataframe-section'>", unsafe_allow_html=True)
-            st.markdown("### Head")
-            st.write(df.head())
-            st.markdown("</div>", unsafe_allow_html=True)
-
-            st.markdown("<div class='dataframe-section dataframe-info'>", unsafe_allow_html=True)
-            st.markdown("### Info")
-            buffer = io.StringIO()
-            df.info(buf=buffer)
-            s = buffer.getvalue()
-            st.text(s)
-            st.markdown("</div>", unsafe_allow_html=True)
-
-            st.markdown("<div class='dataframe-section'>", unsafe_allow_html=True)
-            st.markdown("### Shape")
-            st.write(df.shape)
-            st.markdown("</div>", unsafe_allow_html=True)
-
-            st.markdown("<div class='dataframe-section'>", unsafe_allow_html=True)
-            st.markdown("### Size")
-            st.write(df.size)
-            st.markdown("</div>", unsafe_allow_html=True)
-
-            st.markdown("</div>", unsafe_allow_html=True)
+            st.markdown("<h2 class='main-title'>DataFrame Overview</h2>", unsafe_allow_html=True)
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.write("**Head**")
+                st.write(df.head())
+            with col2:
+                st.write("**Info**")
+                buffer = io.StringIO()
+                df.info(buf=buffer)
+                s = buffer.getvalue()
+                st.text(s)
+            with col3:
+                st.write("**Shape**")
+                st.write(df.shape)
+            with col4:
+                st.write("**Size**")
+                st.write(df.size)
 
             for col in df.select_dtypes(include=['category', 'object']).columns:
                 unique_values = df[col].unique()
@@ -492,7 +466,7 @@ def main():
 
             forecast_periods = st.number_input("Forecasting Period (days)", min_value=1, max_value=365, value=180)
 
-            if st.button("Forecast Future", help="Generate forecast for future data"):
+            if st.button("Forecast Future"):
                 with st.spinner('Forecasting...'):
                     try:
                         forecast = generate_forecast(resampled_df, value_column, forecast_periods)
@@ -513,7 +487,6 @@ def main():
                         st.error(f"Forecasting failed: {e}")
                         logging.error(f"Forecasting failed: {e}")
 
-            st.markdown('</div>', unsafe_allow_html=True)
         else:
             st.markdown('<div class="custom-error">The uploaded file does not contain a \'Timestamp\' column.</div>', unsafe_allow_html=True)
             st.write("### Debugging Information")
