@@ -1,509 +1,615 @@
-import tkinter as tk
-from tkinter import filedialog, messagebox, ttk, simpledialog
-from tkcalendar import DateEntry
+import streamlit as st
 import pandas as pd
+import base64
 import numpy as np
+import time
 from datetime import datetime
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from sklearn.linear_model import LinearRegression
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 from statsmodels.tsa.seasonal import seasonal_decompose
 from sklearn.ensemble import IsolationForest
 from prophet import Prophet
+import plotly.graph_objects as go
+import plotly.express as px
 import seaborn as sns
 import logging
-import time
+from st_aggrid import AgGrid, GridOptionsBuilder
+import io
+import os
 
 # Set up logging
 logging.basicConfig(filename='app.log', level=logging.INFO, format='%(asctime)s %(levelname)s:%(message)s')
 logging.info('Application started')
 
-class App:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Henkel Timeseries Analysis Application")
-        self.root.geometry("1200x800")
-        self.authenticated = False
+# Set the page configuration
+st.set_page_config(page_title="STARENGTS Timeseries Analysis Application", layout="wide")
 
-        self.create_login_widgets()
+# Generate time options
+def generate_time_options():
+    return [f"{hour % 12 if hour % 12 else 12:02d}:{minute:02d}:{second:02d} {'AM' if hour < 12 else 'PM'}"
+            for hour in range(24) for minute in range(60) for second in range(60)]
 
-    def create_login_widgets(self):
-        self.header_frame = tk.Frame(self.root)
-        self.header_frame.pack(fill=tk.X, padx=10, pady=10)
+# Load logo as base64
+def load_logo(filename):
+    with open(filename, "rb") as image_file:
+        encoded_image = base64.b64encode(image_file.read()).decode()
+    return f"data:image/png;base64,{encoded_image}"
 
-        self.clock_label = tk.Label(self.header_frame, font=("Arial", 14))
-        self.clock_label.pack(side=tk.LEFT)
-        self.update_clock()
+# Developer info at the bottom left
+st.markdown("""
+        <div class='developer-info'>
+            Developer Name : Ashish Malviya<br>
+        </div>
+    """, unsafe_allow_html=True)
 
-        self.logo = tk.PhotoImage(file='logo.png')  # Ensure you have a logo file named 'logo.png'
-        self.small_logo = self.logo.subsample(5, 5)  # Reduce the size of the logo by half
-        self.logo_label = tk.Label(self.header_frame, image=self.small_logo)
-        self.logo_label.pack(side=tk.RIGHT)
+# Custom CSS for styling
+def custom_css():
+    st.markdown("""
+        <style>
+            .main-title {
+                font-size: 25px;
+                color: #32c800;
+                text-align: center;
+                font-weight: bold;
+            }
+            .current-time {
+                font-size: 18px;
+                font-weight: bold;
+                display: inline-block;
+                margin-right: 20px;
+            }
+            .upload-button {
+                width: 30%;
+                height: 50px;
+                line-height: 50px;
+                border-width: 1px;
+                border-style: dashed;
+                border-radius: 5px;
+                text-align: center;
+                margin-bottom: 5px;
+                font-size: 10px;
+                position: relative;
+                top: 5px;
+                left: 10px;
+                color: #32c800;
+            }
+            .center-text {
+                text-align: center;
+            }
+            .logo {
+                height: 45px;
+                display: inline-block;
+                margin-left: auto;
+                margin-right: 10px;
+            }
+            .header {
+                position: relative;
+                width: 100%;
+                margin-bottom: 20px;
+                display: flex;
+                justify-content: space-between;
+                color: #32c800;
+                align-items: center;
+            }
+            .developer-info {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                text-align:left;
+                margin: 10px;
+                font-size: 12px;
+            }
+            .stProgress > div > div > div > div {
+                background-color: #32c800;
+            }
+            .content {
+                padding-top: 0px;
+            }
+            .stButton > button {
+                background-color: #32c800;
+                color: white;
+                border: none;
+                font-weight: bold;
+            }
+            .stButton > button:hover {
+                color: white;
+                background-color: #32c800;
+            }
+            .custom-error {
+                background-color: #32c800;
+                color: white;
+                padding: 10px;
+                border-radius: 5px;
+                text-align: center;
+                font-weight: bold;
+            }
+            .df-overview-title {
+                font-size: 12px;
+                font-weight: bold;
+                color: black;
+            }
+            .df-overview-section {
+                font-size: 12px;
+                font-weight: bold;
+                color: black;
+            }
+            .df-shape-size {
+                color: black;
+            }
+            .download-manual {
+                font-size: 18px;
+                font-weight: bold;
+            }
+            .additional-visualizations {
+                font-size: 20px;
+                font-weight: bold;
+                margin-top: 20px;
+            }
+            .histogram, .user-annotations, .advanced-analytics, .correlation-heatmap, .pair-plot {
+                font-size: 18px;
+                font-weight: bold;
+            }
+            .outlier-treatment {
+                font-size: 18px;
+                font-weight: bold;
+                margin-top: 20px;
+                margin-bottom: 20px;
+            }
+            .spacing {
+                margin-top: 50px;
+            }
+        </style>
+    """, unsafe_allow_html=True)
 
-        self.title_label = tk.Label(self.root, text="HENKEL TIMESERIES ANALYSIS APPLICATION", font=("Arial", 18, "bold"), fg="red")
-        self.title_label.pack(pady=10)
+# Get the current time as a string for the clock
+def get_time():
+    return datetime.now().strftime('%Y-%m-%d %I:%M:%S %p')
 
-        self.login_frame = tk.Frame(self.root)
-        self.login_frame.pack(pady=20)
+# Display the logo and time
+def display_logo_and_time(logo_src):
+    current_time_html = f"""
+        <div class='header'>
+            <div class='current-time' id='current-time'>{get_time()}</div>
+            <img src='{logo_src}' class='logo'>
+        </div>
+    """
+    st.markdown(current_time_html, unsafe_allow_html=True)
 
-        self.username_label = tk.Label(self.login_frame, text="Username", font=("Arial", 12))
-        self.username_label.pack(pady=5)
-        self.username_entry = tk.Entry(self.login_frame, font=("Arial", 12))
-        self.username_entry.pack()
+# Add JavaScript for live clock
+def add_js_script():
+    st.markdown("""
+        <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            function updateTime() {
+                var now = new Date();
+                var hours = now.getHours() % 12 || 12;
+                var minutes = now.getMinutes();
+                var seconds = now.getSeconds();
+                var ampm = now.getHours() >= 12 ? 'PM' : 'AM';
+                var timeString = now.getFullYear() + '-' + 
+                                 ('0' + (now.getMonth() + 1)).slice(-2) + '-' + 
+                                 ('0' + now.getDate()).slice(-2) + ' ' + 
+                                 ('0' + hours).slice(-2) + ':' + 
+                                 ('0' + minutes).slice(-2) + ':' + 
+                                 ('0' + seconds).slice(-2) + ' ' + ampm;
+                document.getElementById('current-time').innerHTML = timeString;
+            }
+            setInterval(updateTime, 1000);
+        });
+        </script>
+    """, unsafe_allow_html=True)
 
-        self.password_label = tk.Label(self.login_frame, text="Password", font=("Arial", 12))
-        self.password_label.pack(pady=5)
-        self.password_entry = tk.Entry(self.login_frame, show="*", font=("Arial", 12))
-        self.password_entry.pack()
+# Authenticate user
+def authenticate(username, password):
+    if username == "admin" and password == "password106":
+        st.session_state.authenticated = True
+    else:
+        st.error("Invalid username or password")
 
-        self.login_button = tk.Button(self.login_frame, text="Login", command=self.authenticate_user, font=("Arial", 12))
-        self.login_button.pack(pady=20)
+# Load data from uploaded file
+@st.cache_data
+def load_data(uploaded_file):
+    if uploaded_file.name.endswith('.xlsx'):
+        return pd.read_excel(uploaded_file)
+    else:
+        return pd.read_csv(uploaded_file)
 
-    def authenticate_user(self):
-        username = self.username_entry.get()
-        password = self.password_entry.get()
-        if username == "admin" and password == "password":
-            self.authenticated = True
-            self.login_frame.destroy()
-            self.create_main_widgets()
+# Preprocess data
+@st.cache_data
+def preprocess_data(df):
+    if 'DateTime' in df.columns:
+        df['DateTime'] = pd.to_datetime(df['DateTime'], format='%d/%m/%Y %I:%M:%S.%f %p', errors='coerce')
+        df = df.dropna(subset=['DateTime'])
+        df.set_index('DateTime', inplace=True)
+    return df
+
+# Validate 'DateTime' column and format
+def validate_datetime_column(df):
+    if 'DateTime' not in df.columns:
+        st.markdown('<div class="custom-error">The uploaded file does not contain a \'DateTime\' column The correct column name is DateTime and format is DD/MM/YYYY hh:mm:ss.SSS AM/PM.</div>', unsafe_allow_html=True)
+        logging.error("The uploaded file does not contain a 'DateTime' column, The correct column name is DateTime and format is DD/MM/YYYY hh:mm:ss.SSS AM/PM")
+        st.write("### Debugging Information")
+        st.write(df.head())  # Display the first few rows of the dataframe for debugging
+        return False
+    try:
+        pd.to_datetime(df['DateTime'], format='%d/%m/%Y %I:%M:%S.%f %p')
+    except ValueError:
+        st.markdown('<div class="custom-error">The \'DateTime\' column is not in the correct datetime format (DD/MM/YYYY hh:mm:ss.SSS AM/PM).</div>', unsafe_allow_html=True)
+        logging.error("The 'DateTime' column is not in the correct datetime format (DD/MM/YYYY hh:mm:ss.SSS AM/PM).")
+        st.write("### Debugging Information")
+        st.write(df.head())  # Display the first few rows of the dataframe for debugging
+        return False
+    return True
+
+# Resample dataframe
+@st.cache_data
+def get_resampled_df(filtered_df, sampling_interval):
+    return filtered_df.resample(f'{sampling_interval}min').mean().fillna(0)
+
+# Generate forecast using Prophet
+def generate_forecast(df, value_column, periods):
+    df.reset_index(inplace=True)
+    df.rename(columns={'DateTime': 'ds', value_column: 'y'}, inplace=True)
+    model = Prophet(daily_seasonality=True)
+    model.fit(df)
+    future = model.make_future_dataframe(periods=periods)
+    forecast = model.predict(future)
+    return forecast
+
+# Display data using streamlit-aggrid
+def display_aggrid(df):
+    gb = GridOptionsBuilder.from_dataframe(df)
+    gb.configure_pagination(paginationAutoPageSize=True) # Add pagination
+    gb.configure_side_bar() # Add a sidebar
+    gridOptions = gb.build()
+    AgGrid(
+        df,
+        gridOptions=gridOptions,
+        enable_enterprise_modules=True,
+        height=400,
+        width='100%',
+        fit_columns_on_grid_load=True
+    )
+
+# Function to download the manual
+def download_manual():
+    manual_path = "Applications_manual.pdf"  # File in the same directory
+    if os.path.exists(manual_path):
+        with open(manual_path, "rb") as file:
+            manual_data = file.read()
+        file_name = os.path.basename(manual_path)
+        b64 = base64.b64encode(manual_data).decode()
+        href = f'<a href="data:application/pdf;base64,{b64}" download="{file_name}">Download Manual: {file_name}</a>'
+        st.markdown(href, unsafe_allow_html=True)
+    else:
+        st.warning("Manual not available. Send request to Ashish Malviya!")
+
+# Outlier treatment function
+def treat_outliers(df, value_column):
+    Q1 = df[value_column].quantile(0.25)
+    Q3 = df[value_column].quantile(0.75)
+    IQR = Q3 - Q1
+    lower_bound = Q1 - 1.5 * IQR
+    upper_bound = Q3 + 1.5 * IQR
+    treated_df = df[(df[value_column] >= lower_bound) & (df[value_column] <= upper_bound)]
+    return treated_df
+
+# Main function
+def main():
+    custom_css()
+    logo_src = load_logo('logo.png')
+    display_logo_and_time(logo_src)
+    add_js_script()
+    st.markdown("<h1 class='main-title'>STARENGTS TIMESERIES ANALYSIS APPLICATION</h1>", unsafe_allow_html=True)
+
+    if 'authenticated' not in st.session_state:
+        st.session_state.authenticated = False
+
+    if not st.session_state.authenticated:
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+        if st.button("Login"):
+            authenticate(username, password)
+            if st.session_state.authenticated:
+                st.experimental_rerun()
+        st.stop()
+
+    uploaded_file = st.file_uploader("Upload a CSV or Excel file", type=["csv", "xlsx"], label_visibility="visible", help="Upload a file in CSV or Excel format")
+
+    if uploaded_file:
+        # Removing redundant progress bar
+        st.markdown("""
+            <style>
+                .stProgress > div > div > div > div {
+                    background-color: #32c800;
+                }
+            </style>
+        """, unsafe_allow_html=True)
+        
+        progress_bar = st.progress(0)
+        start_time = datetime.now()
+        for i in range(100):
+            time.sleep(0.01)
+            progress_bar.progress(i + 1)
+        df = load_data(uploaded_file)
+        process_end_time = datetime.now()
+        loading_time = (process_end_time - start_time).total_seconds()
+        st.write(f"Loaded file: {uploaded_file.name} (Total processing time: {loading_time:.2f} seconds)")
+        logging.info(f"Loaded file: {uploaded_file.name} (Total processing time: {loading_time:.2f} seconds)")
+
+        if not validate_datetime_column(df):
+            return
+
+        df = preprocess_data(df)
+
+        if not df.empty:
+            col1, col2, col3, col4, col5, col6 = st.columns(6)
+
+            with col1:
+                start_date = st.date_input("Start Date", min_value=df.index.min().date(), max_value=df.index.max().date(), value=df.index.min().date())
+
+            with col2:
+                end_date = st.date_input("End Date", min_value=df.index.min().date(), max_value=df.index.max().date(), value=df.index.max().date())
+
+            with col3:
+                time_options = generate_time_options()
+                start_time_index = time_options.index(df.index.min().strftime('%I:%M:%S %p'))
+                start_time_str = st.selectbox("Start Time", time_options, index=start_time_index)
+
+            with col4:
+                end_time_index = time_options.index(df.index.max().strftime('%I:%M:%S %p'))
+                end_time_str = st.selectbox("End Time", time_options, index=end_time_index)
+
+            with col5:
+                value_column = st.selectbox("Value Column", [col for col in df.columns if col != 'DateTime'])
+
+            with col6:
+                sampling_interval = st.slider("Sampling Interval (minutes)", 1, 60, 1)
+
+            st.markdown("<div class='df-overview-title'style='font-size:16px;'>DataFrame Overview</div>", unsafe_allow_html=True)
+            
+            # Row 1: Full-width Head
+            st.markdown("<div class='df-overview-section'style='font-size:14px;'>Head</div>", unsafe_allow_html=True)
+            # Ensure datetime values display with AM/PM
+            df_display = df.head().copy()
+            df_display.index = df_display.index.strftime('%Y-%m-%d %I:%M:%S %p')
+            st.write(df_display)
+
+            # Row 2: Full-width Info
+            st.markdown("<div class='df-overview-section'style='font-size:14px;'>Info</div>", unsafe_allow_html=True)
+            buffer = io.StringIO()
+            df.info(buf=buffer)
+            s = buffer.getvalue()
+            st.text(s)
+
+            # Row 3: Half-width Shape and Size
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("<div class='df-overview-section'style='font-size:14px;'>Shape</div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='df-shape-size'>{df.shape}</div>", unsafe_allow_html=True)
+
+            with col2:
+                st.markdown("<div class='df-overview-section'>Size</div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='df-shape-size'>{df.size}</div>", unsafe_allow_html=True)
+
+            for col in df.select_dtypes(include=['category', 'object']).columns:
+                unique_values = df[col].unique()
+                selected_values = st.multiselect(f"Filter by {col}", unique_values, default=unique_values)
+                df = df[df[col].isin(selected_values)]
+
+            start_datetime = datetime.strptime(f"{start_date} {start_time_str}", '%Y-%m-%d %I:%M:%S %p')
+            end_datetime = datetime.strptime(f"{end_date} {end_time_str}", '%Y-%m-%d %I:%M:%S %p')
+            mask = (df.index >= start_datetime) & (df.index <= end_datetime)
+            filtered_df = df.loc[mask]
+            resampled_df = get_resampled_df(filtered_df, sampling_interval)
+
+            # Anomaly detection
+            isolation_forest = IsolationForest(contamination=0.05)
+            anomalies = isolation_forest.fit_predict(resampled_df[[value_column]])
+            resampled_df['Anomaly'] = anomalies
+
+            # Plot the time series data
+            fig = go.Figure()
+
+            inactivity_mask = (resampled_df[value_column].rolling('10min').max() - resampled_df[value_column].rolling('10min').min()) <= 15
+            active_df = resampled_df[~inactivity_mask]
+            inactive_df = resampled_df[inactivity_mask]
+
+            fig.add_trace(go.Scatter(x=active_df.index, y=active_df[value_column], mode='lines', line=dict(color='blue'), name='Active Periods', connectgaps=True))
+            fig.add_trace(go.Scatter(x=inactive_df.index, y=inactive_df[value_column], mode='lines', line=dict(color='red'), name='Inactivity Periods', connectgaps=True))
+            fig.add_trace(go.Scatter(x=resampled_df[resampled_df['Anomaly'] == -1].index, y=resampled_df[resampled_df['Anomaly'] == -1][value_column], mode='markers', name='Anomalies', marker=dict(color='orange')))
+
+            X = np.array((resampled_df.index - resampled_df.index.min()).total_seconds()).reshape(-1, 1)
+            y = resampled_df[value_column].values
+            reg = LinearRegression().fit(X, y)
+            y_pred = reg.predict(X)
+
+            fig.add_trace(go.Scatter(x=resampled_df.index, y=y_pred, mode='lines', line=dict(color='green', dash='dash'), name='Regression Line'))
+
+            fig.update_layout(title='Time Series Data with Inactivity Periods, Anomalies, and Regression Line', xaxis_title='DateTime', yaxis_title=value_column)
+            st.plotly_chart(fig)
+            st.markdown("**The time series plot displays the data over time, with blue lines representing active periods, red lines indicating inactivity periods, and orange markers highlighting anomalies. The green dashed line shows the linear regression line, which helps identify the overall trend in the data.**")
+
+            # Initial box plot
+            box_fig = go.Figure()
+            box_fig.add_trace(go.Box(y=resampled_df[value_column], name=value_column, boxpoints='all', jitter=0.3, pointpos=-1.8, marker_color='blue'))
+            st.plotly_chart(box_fig)
+            st.markdown("**The box plot visualizes the distribution of the selected data. It displays the median (line inside the box), the interquartile range (the box), and potential outliers (points outside the whiskers). The box plot helps identify the central tendency and variability of the data.**")
+
+            # Outlier treatment selection
+            st.markdown("<div class='outlier-treatment'>Outlier Treatment</div>", unsafe_allow_html=True)
+            outlier_treatment = st.radio("Do you want to treat outliers?", ("No", "Yes"))
+            outlier_placeholder = st.empty()
+
+            if outlier_treatment == "Yes":
+                st.markdown("**Yes- Data Outliers will be treated**")
+                treated_df = treat_outliers(resampled_df, value_column)
+                # Second box plot after outlier treatment
+                with outlier_placeholder:
+                    treated_box_fig = go.Figure()
+                    treated_box_fig.add_trace(go.Box(y=treated_df[value_column], name=value_column, boxpoints='all', jitter=0.3, pointpos=-1.8, marker_color='blue'))
+                    st.plotly_chart(treated_box_fig)
+                    st.markdown("**The second box plot visualizes the distribution of the data after outlier treatment.**")
+            else:
+                st.markdown("**No- Data Outliers will not be treated**")
+                treated_df = resampled_df
+                outlier_placeholder.empty()
+
+            # Continue with analysis and plots using treated_df
+
+            decomposition = seasonal_decompose(treated_df[value_column], model='additive', period=30)
+            trend = decomposition.trend.dropna()
+            seasonal = decomposition.seasonal.dropna()
+            resid = decomposition.resid.dropna()
+
+            decomposition_fig = go.Figure()
+            decomposition_fig.add_trace(go.Scatter(x=trend.index, y=trend, mode='lines', name='Trend', line=dict(color='blue')))
+            decomposition_fig.add_trace(go.Scatter(x=seasonal.index, y=seasonal, mode='lines', name='Seasonality', line=dict(color='orange')))
+            decomposition_fig.add_trace(go.Scatter(x=resid.index, y=resid, mode='lines', name='Residuals', line=dict(color='green')))
+            st.plotly_chart(decomposition_fig, use_container_width=True)
+            st.markdown("**The time series decomposition plot breaks down the data into its trend, seasonal, and residual components. The trend component shows the long-term direction, the seasonal component captures repeating patterns, and the residual component represents random noise.**")
+
+            control_chart_fig = go.Figure()
+            control_chart_fig.add_trace(go.Scatter(x=treated_df.index, y=treated_df[value_column], mode='lines', name='Load cell Value', line=dict(color='blue')))
+            control_chart_fig.add_trace(go.Scatter(x=treated_df.index, y=treated_df[value_column].rolling(window=30).std(), mode='lines', name='Rolling Std', line=dict(color='orange'), yaxis='y2'))
+            control_chart_fig.update_layout(title='Control Charts (X-bar and R charts)', xaxis_title='DateTime', yaxis=dict(title=value_column), yaxis2=dict(title='Standard Deviation', overlaying='y', side='right'))
+            st.plotly_chart(control_chart_fig, use_container_width=True)
+            st.markdown("**The control chart monitors the process stability over time. The X-bar chart shows the mean of the process, and the R chart displays the range of the process variation. These charts help identify any unusual variations in the process.**")
+
+            kmeans = KMeans(n_clusters=3)
+            treated_df['Cluster'] = kmeans.fit_predict(treated_df[[value_column]])
+            num_clusters = len(set(treated_df['Cluster']))
+
+            if num_clusters > 1:
+                silhouette_avg = silhouette_score(treated_df[[value_column]], treated_df['Cluster'])
+            else:
+                silhouette_avg = 'N/A'
+
+            cluster_fig = go.Figure()
+            colors = ['blue', 'orange', 'green']
+            for cluster in range(num_clusters):
+                cluster_data = treated_df[treated_df['Cluster'] == cluster]
+                cluster_fig.add_trace(go.Scatter(x=cluster_data.index, y=cluster_data[value_column], mode='markers', marker=dict(color=colors[cluster]), name=f'Cluster {cluster}'))
+
+            cluster_fig.update_layout(title=f'KMeans Clustering (Silhouette Score: {silhouette_avg})', xaxis_title='DateTime', yaxis_title=value_column)
+            st.plotly_chart(cluster_fig, use_container_width=True)
+            st.markdown("**The clustering plot uses KMeans to group the data into clusters. Each color represents a different cluster, helping to identify patterns and similarities within the data. The silhouette score indicates how well the data points fit within their clusters, with higher values representing better clustering.**")
+
+            stats = treated_df[value_column].describe(percentiles=[.25, .5, .75])
+
+            total_active_time = active_df.shape[0] * sampling_interval
+            total_inactive_time = inactive_df.shape[0] * sampling_interval
+
+            r_squared = reg.score(X, y)
+
+            stats_output = f"""
+            **Descriptive Statistics**
+            - Mean: {stats['mean']:.2f}
+            - Max: {stats['max']:.2f}
+            - Min: {stats['min']:.2f}
+            - Standard Deviation: {stats['std']:.2f}
+            - 25%: {stats['25%']:.2f}
+            - 50% (Median): {stats['50%']:.2f}
+            - 75%: {stats['75%']:.2f}
+            **Linear Regression**
+            - Equation: y = {reg.coef_[0]:.2f}x + {reg.intercept_:.2f}
+            - R²: {r_squared:.2f}
+            **Activity Duration**
+            - Total Active Time: {total_active_time} minutes
+            - Total Inactive Time: {total_inactive_time} minutes
+            """
+            st.markdown(stats_output)
+            logging.info("Descriptive statistics generated.")
+
+            st.markdown("<div class='additional-visualizations'>Additional Visualizations</div>", unsafe_allow_html=True)
+
+            st.markdown("<div class='histogram'>Histogram</div>", unsafe_allow_html=True)
+            fig_hist = go.Figure()
+            colors = px.colors.qualitative.Plotly
+
+            for i, col in enumerate(df.columns):
+                if pd.api.types.is_numeric_dtype(df[col]):
+                    fig_hist.add_trace(go.Histogram(x=df[col], name=col, marker=dict(color=colors[i % len(colors)]), opacity=0.75))
+
+            fig_hist.update_layout(barmode='overlay', title='Histogram of Numeric Columns', xaxis_title='Value', yaxis_title='Count', legend=dict(x=1, y=1, traceorder='normal'), bargap=0.2)
+            fig_hist.update_traces(opacity=0.75)
+            st.plotly_chart(fig_hist, use_container_width=True)
+            logging.info("Histogram generated.")
+            st.markdown("**The histogram visualizes the distribution of the data for each numeric column in the dataset.**")
+
+            st.markdown("<div class='pair-plot'>Pair Plot</div>", unsafe_allow_html=True)
+            pair_plot_fig = sns.pairplot(df.select_dtypes(include=[np.number]), diag_kind='kde')
+            st.pyplot(pair_plot_fig)
+            logging.info("Pair plot generated.")
+            st.markdown("**The pair plot displays pairwise relationships in the dataset, showing scatter plots for each pair of features and histograms for individual features.**")
+
+            st.markdown("<div class='correlation-heatmap'>Correlation Heatmap</div>", unsafe_allow_html=True)
+            corr = df.corr()
+            fig_heatmap = go.Figure(data=go.Heatmap(z=corr.values, x=corr.index.values, y=corr.columns.values, colorscale='Viridis'))
+            fig_heatmap.update_layout(title='Correlation Heatmap')
+            st.plotly_chart(fig_heatmap, use_container_width=True)
+            logging.info("Correlation heatmap generated.")
+            st.markdown("**The correlation heatmap displays the correlation coefficients between pairs of features in the dataset. The colors represent the strength of the correlations.**")
+
+            st.markdown("<div class='user-annotations'>User Annotations</div>", unsafe_allow_html=True)
+            annotation_text = st.text_input("Enter annotation text")
+            annotation_x = st.text_input("Enter x value for annotation")
+            annotation_y = st.text_input("Enter y value for annotation")
+            if st.button("Add Annotation"):
+                fig.add_trace(go.Scatter(x=[annotation_x], y=[annotation_y], mode='text', text=[annotation_text], name='Annotation'))
+                st.plotly_chart(fig)
+
+            st.markdown("<div class='advanced-analytics'>Advanced Analytics</div>", unsafe_allow_html=True)
+            degree = st.slider("Degree of Polynomial Regression", 1, 10, 2)
+            poly_features = np.polyfit(X.flatten(), y, degree)
+            poly_model = np.poly1d(poly_features)
+            y_poly_pred = poly_model(X.flatten())
+            fig.add_trace(go.Scatter(x=treated_df.index, y=y_poly_pred[:len(treated_df.index)], mode='lines', line=dict(color='purple', dash='dot'), name=f'Polynomial Regression (degree {degree})'))
+            st.plotly_chart(fig)
+
+            forecast_periods = st.number_input("Forecasting Period (days)", min_value=1, max_value=365, value=180)
+
+            if st.button("Forecast Future"):
+                with st.spinner('Forecasting...'):
+                    try:
+                        forecast = generate_forecast(treated_df, value_column, forecast_periods)
+                        fig_forecast = go.Figure()
+                        fig_forecast.add_trace(go.Scatter(x=forecast['ds'], y=forecast['yhat'], mode='lines', name='Forecast', line=dict(color='blue')))
+                        fig_forecast.add_trace(go.Scatter(x=forecast['ds'], y=forecast['yhat_lower'], fill=None, mode='lines', line=dict(color='gray'), showlegend=False))
+                        fig_forecast.add_trace(go.Scatter(x=forecast['ds'], y=forecast['yhat_upper'], fill='tonexty', mode='lines', line=dict(color='gray'), showlegend=False))
+                        st.plotly_chart(fig_forecast)
+                        logging.info("Forecast plot generated.")
+                        st.markdown("**The forecast plot shows the predicted future values of the selected time series. The blue line represents the forecasted values, while the shaded area indicates the uncertainty intervals (upper and lower bounds). The forecast helps in understanding the potential future trends based on the historical data.**")
+
+                        csv = forecast.to_csv(index=False)
+                        b64 = base64.b64encode(csv.encode()).decode()
+                        href = f'<a href="data:file/csv;base64,{b64}" download="forecast.csv">Download Forecast Data</a>'
+                        st.markdown(href, unsafe_allow_html=True)
+                        logging.info("Forecast data download link generated.")
+                    except Exception as e:
+                        st.error(f"Forecasting failed: {e}")
+                        logging.error(f"Forecasting failed: {e}")
+
+            st.markdown('</div>', unsafe_allow_html=True)
+
+            st.markdown("<div class='download-manual'>Download Manual</div>", unsafe_allow_html=True)
+            download_manual()
         else:
-            messagebox.showerror("Error", "Invalid username or password")
-
-    def create_main_widgets(self):
-        self.main_frame = tk.Frame(self.root)
-        self.main_frame.pack(pady=10, fill=tk.BOTH, expand=True)
-
-        self.filter_frame = tk.Frame(self.main_frame)
-        self.filter_frame.pack(pady=10, fill=tk.X)
-
-        self.start_date_label = tk.Label(self.filter_frame, text="Start Date", font=("Arial", 10))
-        self.start_date_label.grid(row=1, column=0, padx=5, sticky='ew')
-        self.start_date = DateEntry(self.filter_frame, font=("Arial", 10), date_pattern='yyyy-MM-dd')
-        self.start_date.grid(row=2, column=0, padx=5, sticky='ew')
-
-        self.start_time_label = tk.Label(self.filter_frame, text="Start Time", font=("Arial", 10))
-        self.start_time_label.grid(row=1, column=1, padx=5, sticky='ew')
-        self.start_time = ttk.Combobox(self.filter_frame, font=("Arial", 10))
-        self.start_time.grid(row=2, column=1, padx=5, sticky='ew')
-
-        self.end_date_label = tk.Label(self.filter_frame, text="End Date", font=("Arial", 10))
-        self.end_date_label.grid(row=1, column=2, padx=5, sticky='ew')
-        self.end_date = DateEntry(self.filter_frame, font=("Arial", 10), date_pattern='yyyy-MM-dd')
-        self.end_date.grid(row=2, column=2, padx=5, sticky='ew')
-
-        self.end_time_label = tk.Label(self.filter_frame, text="End Time", font=("Arial", 10))
-        self.end_time_label.grid(row=1, column=3, padx=5, sticky='ew')
-        self.end_time = ttk.Combobox(self.filter_frame, font=("Arial", 10))
-        self.end_time.grid(row=2, column=3, padx=5, sticky='ew')
-
-        self.value_column_label = tk.Label(self.filter_frame, text="Value Column", font=("Arial", 10))
-        self.value_column_label.grid(row=1, column=4, padx=5, sticky='ew')
-        self.value_column = ttk.Combobox(self.filter_frame, font=("Arial", 10))
-        self.value_column.grid(row=2, column=4, padx=5, sticky='ew')
-
-        self.sampling_interval_label = tk.Label(self.filter_frame, text="Sampling Interval (minutes)", font=("Arial", 10))
-        self.sampling_interval_label.grid(row=1, column=5, padx=5, sticky='ew')
-        self.sampling_interval = tk.Scale(self.filter_frame, from_=1, to=60, orient=tk.HORIZONTAL, font=("Arial", 10))
-        self.sampling_interval.grid(row=2, column=5, padx=5, sticky='ew')
-
-        self.load_button = tk.Button(self.filter_frame, text="Load CSV or Excel", command=self.load_data, font=("Arial", 12))
-        self.load_button.grid(row=2, column=8, padx=5, pady=5, sticky='ew')
-
-        self.filter_button = tk.Button(self.filter_frame, text="Filter Data", command=self.filter_data, font=("Arial", 10))
-        self.filter_button.grid(row=2, column=6, padx=5, sticky='ew')
-
-        for col in range(7):
-            self.filter_frame.grid_columnconfigure(col, weight=1)
-
-        self.plot_button = tk.Button(self.filter_frame, text="Plot Data", command=self.plot_data, font=("Arial", 10))
-        self.plot_button.grid(row=3, column=0, padx=5, pady=5, sticky='ew')
-
-        self.forecast_button = tk.Button(self.filter_frame, text="Forecast Future", command=self.forecast_future, font=("Arial", 10))
-        self.forecast_button.grid(row=3, column=1, padx=5, pady=5, sticky='ew')
-
-        self.info_button = tk.Button(self.filter_frame, text="Info", command=self.show_info, font=("Arial", 10))
-        self.info_button.grid(row=3, column=2, padx=5, pady=5, sticky='ew')
-
-        self.descriptive_stats_button = tk.Button(self.filter_frame, text="Show Descriptive Statistics", command=self.show_descriptive_statistics, font=("Arial", 10))
-        self.descriptive_stats_button.grid(row=3, column=3, padx=5, pady=5, sticky='ew')
-
-        self.control_chart_button = tk.Button(self.filter_frame, text="Control Chart", command=self.create_control_chart, font=("Arial", 10))
-        self.control_chart_button.grid(row=3, column=4, padx=5, pady=5, sticky='ew')
-
-        self.clustering_plot_button = tk.Button(self.filter_frame, text="Clustering Plot", command=self.create_clustering_plot, font=("Arial", 10))
-        self.clustering_plot_button.grid(row=3, column=5, padx=5, pady=5, sticky='ew')
-
-        self.histogram_button = tk.Button(self.filter_frame, text="Histogram", command=self.create_histogram, font=("Arial", 10))
-        self.histogram_button.grid(row=3, column=6, padx=5, pady=5, sticky='ew')
-
-        self.pair_plot_button = tk.Button(self.filter_frame, text="Pair Plot", command=self.create_pair_plot, font=("Arial", 10))
-        self.pair_plot_button.grid(row=3, column=7, padx=5, pady=5, sticky='ew')
-
-        self.correlation_heatmap_button = tk.Button(self.filter_frame, text="Correlation Heatmap", command=self.create_correlation_heatmap, font=("Arial", 10))
-        self.correlation_heatmap_button.grid(row=3, column=8, padx=5, pady=5, sticky='ew')
-
-        for col in range(9):
-            self.filter_frame.grid_columnconfigure(col, weight=1)
-
-        self.plot_frame = tk.Frame(self.main_frame)
-        self.plot_frame.pack(fill=tk.BOTH, expand=True)
-
-        self.developer_label = tk.Label(self.root, text="Developer - Ashish Malviya", font=("Arial", 8))
-        self.developer_label.pack(side=tk.BOTTOM, anchor=tk.E, padx=10, pady=10)
-
-    def update_clock(self):
-        now = time.strftime("%Y-%m-%d %H:%M:%S")
-        self.clock_label.config(text=now)
-        self.root.after(1000, self.update_clock)
-
-    def load_data(self):
-        file_path = filedialog.askopenfilename(filetypes=[("CSV files", "*.csv"), ("Excel files", "*.xlsx")])
-        if file_path:
-            try:
-                if file_path.endswith('.xlsx'):
-                    self.df = pd.read_excel(file_path)
-                else:
-                    self.df = pd.read_csv(file_path)
-                self.preprocess_data()
-                self.value_column['values'] = list(self.df.columns)
-                self.start_date.set_date(self.df.index.min().date())
-                self.end_date.set_date(self.df.index.max().date())
-                self.start_time['values'] = [f"{i:02d}:00:00" for i in range(24)]
-                self.end_time['values'] = [f"{i:02d}:00:00" for i in range(24)]
-                self.start_time.set(self.df.index.min().time().strftime('%H:%M:%S'))
-                self.end_time.set(self.df.index.max().time().strftime('%H:%M:%S'))
-                messagebox.showinfo("Success", f"Loaded file: {file_path}")
-                logging.info(f"Loaded file: {file_path}")
-            except Exception as e:
-                messagebox.showerror("Error", f"Failed to load file: {e}")
-                logging.error(f"Failed to load file: {e}")
-
-    def preprocess_data(self):
-        if 'Timestamp' in self.df.columns:
-            self.df['Timestamp'] = pd.to_datetime(self.df['Timestamp'], errors='coerce')
-            self.df = self.df.dropna(subset=['Timestamp'])
-            self.df.set_index('Timestamp', inplace=True)
-
-    def filter_data(self):
-        try:
-            start_date = self.start_date.get()
-            end_date = self.end_date.get()
-            start_time = self.start_time.get()
-            end_time = self.end_time.get()
-            value_col = self.value_column.get()
-            sampling_interval = int(self.sampling_interval.get())
-
-            start_datetime = datetime.strptime(f"{start_date} {start_time}", '%Y-%m-%d %H:%M:%S')
-            end_datetime = datetime.strptime(f"{end_date} {end_time}", '%Y-%m-%d %H:%M:%S')
-
-            mask = (self.df.index >= start_datetime) & (self.df.index <= end_datetime)
-            self.filtered_df = self.df.loc[mask]
-            self.resampled_df = self.filtered_df.resample(f'{sampling_interval}min').mean().fillna(0)
-
-            messagebox.showinfo("Success", "Data filtered and resampled")
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to filter data: {e}")
-            logging.error(f"Failed to filter data: {e}")
-
-    def plot_data(self):
-        try:
-            if hasattr(self, 'resampled_df') and not self.resampled_df.empty:
-                value_col = self.value_column.get()
-
-                fig = plt.figure()
-                ax = fig.add_subplot(111)
-
-                ax.plot(self.resampled_df.index, self.resampled_df[value_col], label=value_col)
-                ax.set_title('Time Series Data')
-                ax.set_xlabel('Timestamp')
-                ax.set_ylabel(value_col)
-
-                self.perform_anomaly_detection(value_col, ax)
-                self.perform_linear_regression(value_col, ax)
-
-                if len(self.resampled_df) >= 60:
-                    self.perform_seasonal_decompose(value_col, ax)
-                else:
-                    logging.warning(f"Not enough data for seasonal decomposition: {len(self.resampled_df)} observations")
-
-                for widget in self.plot_frame.winfo_children():
-                    widget.destroy()
-
-                canvas = FigureCanvasTkAgg(fig, master=self.plot_frame)
-                canvas.draw()
-                canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-
-                messagebox.showinfo("Success", "Data plotted")
-            else:
-                messagebox.showerror("Error", "No data to plot")
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to plot data: {e}")
-            logging.error(f"Failed to plot data: {e}")
-
-    def perform_anomaly_detection(self, value_col, ax):
-        isolation_forest = IsolationForest(contamination=0.05)
-        anomalies = isolation_forest.fit_predict(self.resampled_df[[value_col]])
-        self.resampled_df['Anomaly'] = anomalies
-        ax.scatter(self.resampled_df[self.resampled_df['Anomaly'] == -1].index, 
-                   self.resampled_df[self.resampled_df['Anomaly'] == -1][value_col], 
-                   color='orange', label='Anomalies')
-
-    def perform_linear_regression(self, value_col, ax):
-        X = np.array((self.resampled_df.index - self.resampled_df.index.min()).total_seconds()).reshape(-1, 1)
-        y = self.resampled_df[value_col].values
-        reg = LinearRegression().fit(X, y)
-        y_pred = reg.predict(X)
-        ax.plot(self.resampled_df.index, y_pred, color='green', linestyle='--', label='Regression Line')
-
-    def perform_seasonal_decompose(self, value_col, ax):
-        decomposition = seasonal_decompose(self.resampled_df[value_col], model='additive', period=30)
-        trend = decomposition.trend.dropna()
-        seasonal = decomposition.seasonal.dropna()
-        resid = decomposition.resid.dropna()
-
-        fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 8))
-        fig.suptitle('Time Series Decomposition')
-
-        ax1.plot(trend.index, trend, label='Trend', color='blue')
-        ax1.legend(loc='best')
-
-        ax2.plot(seasonal.index, seasonal, label='Seasonality', color='orange')
-        ax2.legend(loc='best')
-
-        ax3.plot(resid.index, resid, label='Residuals', color='green')
-        ax3.legend(loc='best')
-
-        fig.tight_layout()
-
-        for widget in self.plot_frame.winfo_children():
-            widget.destroy()
-
-        canvas = FigureCanvasTkAgg(fig, master=self.plot_frame)
-        canvas.draw()
-        canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-
-    def forecast_future(self):
-        try:
-            if hasattr(self, 'resampled_df') and not self.resampled_df.empty:
-                value_col = self.value_column.get()
-                forecast_periods = int(simpledialog.askstring("Input", "Enter forecasting period (days):"))
-
-                forecast = self.generate_forecast(self.resampled_df, value_col, forecast_periods)
-                
-                fig = plt.figure()
-                ax = fig.add_subplot(111)
-                ax.plot(forecast['ds'], forecast['yhat'], label='Forecast', color='blue')
-                ax.fill_between(forecast['ds'], forecast['yhat_lower'], forecast['yhat_upper'], color='gray', alpha=0.5)
-                ax.set_title('Forecast')
-                ax.set_xlabel('Timestamp')
-                ax.set_ylabel(value_col)
-
-                for widget in self.plot_frame.winfo_children():
-                    widget.destroy()
-
-                canvas = FigureCanvasTkAgg(fig, master=self.plot_frame)
-                canvas.draw()
-                canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-
-                messagebox.showinfo("Success", "Forecasting completed")
-            else:
-                messagebox.showerror("Error", "No data to forecast")
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to forecast data: {e}")
-            logging.error(f"Failed to forecast data: {e}")
-
-    def generate_forecast(self, df, value_column, periods):
-        df.reset_index(inplace=True)
-        df.rename(columns={'Timestamp': 'ds', value_column: 'y'}, inplace=True)
-        model = Prophet(daily_seasonality=True)
-        model.fit(df)
-        future = model.make_future_dataframe(periods=periods)
-        forecast = model.predict(future)
-        return forecast
-
-    def show_info(self):
-        try:
-            if hasattr(self, 'df') and not self.df.empty:
-                info_string = f"""
-                Head:\n{self.df.head()}\n
-                Shape: {self.df.shape}\n
-                Size: {self.df.size}\n
-                Describe:\n{self.df.describe().T}\n
-                Info:\n{self.df.info(buf=None)}\n
-                Missing Values:\n{self.df.isnull().sum()}\n
-                Duplicated Rows:\n{self.df.duplicated().sum()}\n
-                """
-                info_window = tk.Toplevel(self.root)
-                info_window.title("Data Information")
-                text = tk.Text(info_window, wrap=tk.WORD)
-                text.insert(tk.END, info_string)
-                text.pack(expand=1, fill=tk.BOTH)
-                messagebox.showinfo("Success", "Data information displayed")
-            else:
-                messagebox.showerror("Error", "No data loaded")
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to show data information: {e}")
-            logging.error(f"Failed to show data information: {e}")
-
-    def show_descriptive_statistics(self):
-        try:
-            if hasattr(self, 'resampled_df') and not self.resampled_df.empty:
-                stats = self.resampled_df.describe()
-                stats.loc['range'] = stats.loc['max'] - stats.loc['min']
-                stats.loc['median'] = self.resampled_df.median()
-                stats.loc['total_active_time'] = (self.resampled_df[self.value_column.get()] > 0).sum() * int(self.sampling_interval.get())
-                stats.loc['total_inactive_time'] = (self.resampled_df[self.value_column.get()] == 0).sum() * int(self.sampling_interval.get())
-
-                stats_window = tk.Toplevel(self.root)
-                stats_window.title("Descriptive Statistics")
-                text = tk.Text(stats_window, wrap=tk.WORD)
-                text.insert(tk.END, str(stats))
-                text.pack(expand=1, fill=tk.BOTH)
-                messagebox.showinfo("Success", "Descriptive statistics displayed")
-            else:
-                messagebox.showerror("Error", "No data for statistics")
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to show descriptive statistics: {e}")
-            logging.error(f"Failed to show descriptive statistics: {e}")
-
-    def create_control_chart(self):
-        try:
-            if hasattr(self, 'resampled_df') and not self.resampled_df.empty:
-                value_col = self.value_column.get()
-
-                mean = self.resampled_df[value_col].mean()
-                std_dev = self.resampled_df[value_col].std()
-                control_limits = [mean + 3 * std_dev, mean - 3 * std_dev]
-
-                fig, ax = plt.subplots()
-                ax.plot(self.resampled_df.index, self.resampled_df[value_col], label=value_col)
-                ax.axhline(mean, color='green', linestyle='--', label='Mean')
-                ax.axhline(control_limits[0], color='red', linestyle='--', label='Upper Control Limit')
-                ax.axhline(control_limits[1], color='red', linestyle='--', label='Lower Control Limit')
-                ax.legend()
-                ax.set_title('Control Chart')
-                ax.set_xlabel('Timestamp')
-                ax.set_ylabel(value_col)
-
-                for widget in self.plot_frame.winfo_children():
-                    widget.destroy()
-
-                canvas = FigureCanvasTkAgg(fig, master=self.plot_frame)
-                canvas.draw()
-                canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-
-                messagebox.showinfo("Success", "Control chart created")
-            else:
-                messagebox.showerror("Error", "No data for control chart")
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to create control chart: {e}")
-            logging.error(f"Failed to create control chart: {e}")
-
-    def create_clustering_plot(self):
-        try:
-            if hasattr(self, 'resampled_df') and not self.resampled_df.empty:
-                value_col = self.value_column.get()
-                X = self.resampled_df[[value_col]].values
-
-                kmeans = KMeans(n_clusters=3)
-                clusters = kmeans.fit_predict(X)
-                self.resampled_df['Cluster'] = clusters
-                silhouette_avg = silhouette_score(X, clusters)
-
-                fig, ax = plt.subplots()
-                sns.scatterplot(x=self.resampled_df.index, y=self.resampled_df[value_col], hue=clusters, palette="deep", ax=ax)
-                ax.set_title(f'Clustering Plot (Silhouette Score: {silhouette_avg:.2f})')
-                ax.set_xlabel('Timestamp')
-                ax.set_ylabel(value_col)
-
-                for widget in self.plot_frame.winfo_children():
-                    widget.destroy()
-
-                canvas = FigureCanvasTkAgg(fig, master=self.plot_frame)
-                canvas.draw()
-                canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-
-                messagebox.showinfo("Success", "Clustering plot created")
-            else:
-                messagebox.showerror("Error", "No data for clustering plot")
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to create clustering plot: {e}")
-            logging.error(f"Failed to create clustering plot: {e}")
-
-    def create_histogram(self):
-        try:
-            if hasattr(self, 'resampled_df') and not self.resampled_df.empty:
-                value_col = self.value_column.get()
-
-                fig, ax = plt.subplots()
-                self.resampled_df[value_col].plot(kind='hist', bins=30, ax=ax)
-                ax.set_title('Histogram')
-                ax.set_xlabel(value_col)
-                ax.set_ylabel('Frequency')
-
-                for widget in self.plot_frame.winfo_children():
-                    widget.destroy()
-
-                canvas = FigureCanvasTkAgg(fig, master=self.plot_frame)
-                canvas.draw()
-                canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-
-                messagebox.showinfo("Success", "Histogram created")
-            else:
-                messagebox.showerror("Error", "No data for histogram")
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to create histogram: {e}")
-            logging.error(f"Failed to create histogram: {e}")
-
-    def create_pair_plot(self):
-        try:
-            if hasattr(self, 'resampled_df') and not self.resampled_df.empty:
-                value_col = self.value_column.get()
-                pair_plot_data = self.resampled_df.select_dtypes(include=[np.number]).dropna()
-
-                fig = sns.pairplot(pair_plot_data)
-                fig.fig.suptitle('Pair Plot', y=1.02)
-
-                for widget in self.plot_frame.winfo_children():
-                    widget.destroy()
-
-                canvas = FigureCanvasTkAgg(fig.fig, master=self.plot_frame)
-                canvas.draw()
-                canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-
-                messagebox.showinfo("Success", "Pair plot created")
-            else:
-                messagebox.showerror("Error", "No data for pair plot")
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to create pair plot: {e}")
-            logging.error(f"Failed to create pair plot: {e}")
-
-    def create_correlation_heatmap(self):
-        try:
-            if hasattr(self, 'resampled_df') and not self.resampled_df.empty:
-                correlation_data = self.resampled_df.corr()
-
-                fig, ax = plt.subplots()
-                sns.heatmap(correlation_data, annot=True, cmap='coolwarm', ax=ax)
-                ax.set_title('Correlation Heatmap')
-
-                for widget in self.plot_frame.winfo_children():
-                    widget.destroy()
-
-                canvas = FigureCanvasTkAgg(fig, master=self.plot_frame)
-                canvas.draw()
-                canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-
-                messagebox.showinfo("Success", "Correlation heatmap created")
-            else:
-                messagebox.showerror("Error", "No data for correlation heatmap")
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to create correlation heatmap: {e}")
-            logging.error(f"Failed to create correlation heatmap: {e}")
+            st.markdown('<div class="custom-error">The uploaded file does not contain a \'DateTime\' column.</div>', unsafe_allow_html=True)
+            st.write("### Debugging Information")
+            st.write(df.head())  # Display the first few rows of the dataframe for debugging
+            logging.error("The uploaded file does not contain a 'DateTime' column,The correct column name is DateTime and format is DD/MM/YYYY hh:mm:ss.SSS AM/PM.")
+    else:
+        st.write("Please upload a CSV or Excel file to get started.")
+        logging.info("Waiting for file upload.")
+
+    # Developer info at the bottom left
+    st.markdown("""
+        <div class='developer-info'>
+            Developer Name : Ashish Malviya<br>
+        </div>
+    """, unsafe_allow_html=True)
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    app = App(root)
-    root.mainloop()
+    main()
