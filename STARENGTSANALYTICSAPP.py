@@ -404,59 +404,49 @@ def main():
             filtered_df = df.loc[mask]
             resampled_df = get_resampled_df(filtered_df, sampling_interval)
 
-            # Anomaly detection
-            isolation_forest = IsolationForest(contamination=0.05)
-            anomalies = isolation_forest.fit_predict(resampled_df[[value_column]])
-            resampled_df['Anomaly'] = anomalies
-
-            # Plot the time series data
-            fig = go.Figure()
-
-            inactivity_mask = (resampled_df[value_column].rolling('10min').max() - resampled_df[value_column].rolling('10min').min()) <= 15
-            active_df = resampled_df[~inactivity_mask]
-            inactive_df = resampled_df[inactivity_mask]
-
-            fig.add_trace(go.Scatter(x=active_df.index, y=active_df[value_column], mode='lines', line=dict(color='blue'), name='Active Periods', connectgaps=True))
-            fig.add_trace(go.Scatter(x=inactive_df.index, y=inactive_df[value_column], mode='lines', line=dict(color='red'), name='Inactivity Periods', connectgaps=True))
-            fig.add_trace(go.Scatter(x=resampled_df[resampled_df['Anomaly'] == -1].index, y=resampled_df[resampled_df['Anomaly'] == -1][value_column], mode='markers', name='Anomalies', marker=dict(color='orange')))
-
-            X = np.array((resampled_df.index - resampled_df.index.min()).total_seconds()).reshape(-1, 1)
-            y = resampled_df[value_column].values
-            reg = LinearRegression().fit(X, y)
-            y_pred = reg.predict(X)
-
-            fig.add_trace(go.Scatter(x=resampled_df.index, y=y_pred, mode='lines', line=dict(color='green', dash='dash'), name='Regression Line'))
-
-            fig.update_layout(title='Time Series Data with Inactivity Periods, Anomalies, and Regression Line', xaxis_title='DateTime', yaxis_title=value_column)
-            st.plotly_chart(fig)
-            st.markdown("**The time series plot displays the data over time, with blue lines representing active periods, red lines indicating inactivity periods, and orange markers highlighting anomalies. The green dashed line shows the linear regression line, which helps identify the overall trend in the data.**")
-
-            # Initial box plot
-            box_fig = go.Figure()
-            box_fig.add_trace(go.Box(y=resampled_df[value_column], name=value_column, boxpoints='all', jitter=0.3, pointpos=-1.8, marker_color='blue'))
-            st.plotly_chart(box_fig)
-            st.markdown("**The box plot visualizes the distribution of the selected data. It displays the median (line inside the box), the interquartile range (the box), and potential outliers (points outside the whiskers). The box plot helps identify the central tendency and variability of the data.**")
-
             # Outlier treatment selection
             st.markdown("<div class='outlier-treatment'>Outlier Treatment</div>", unsafe_allow_html=True)
             outlier_treatment = st.radio("Do you want to treat outliers?", ("No", "Yes"))
-            outlier_placeholder = st.empty()
 
             if outlier_treatment == "Yes":
                 st.markdown("**Yes- Data Outliers will be treated**")
                 treated_df = treat_outliers(resampled_df, value_column)
-                # Second box plot after outlier treatment
-                with outlier_placeholder:
-                    treated_box_fig = go.Figure()
-                    treated_box_fig.add_trace(go.Box(y=treated_df[value_column], name=value_column, boxpoints='all', jitter=0.3, pointpos=-1.8, marker_color='blue'))
-                    st.plotly_chart(treated_box_fig)
-                    st.markdown("**The second box plot visualizes the distribution of the data after outlier treatment.**")
             else:
                 st.markdown("**No- Data Outliers will not be treated**")
                 treated_df = resampled_df
-                outlier_placeholder.empty()
 
-            # Continue with analysis and plots using treated_df
+            # Box plot
+            box_fig = go.Figure()
+            box_fig.add_trace(go.Box(y=treated_df[value_column], name=value_column, boxpoints='all', jitter=0.3, pointpos=-1.8, marker_color='blue'))
+            st.plotly_chart(box_fig)
+            st.markdown("**The box plot visualizes the distribution of the selected data. It displays the median (line inside the box), the interquartile range (the box), and potential outliers (points outside the whiskers). The box plot helps identify the central tendency and variability of the data.**")
+
+            # Anomaly detection
+            isolation_forest = IsolationForest(contamination=0.05)
+            anomalies = isolation_forest.fit_predict(treated_df[[value_column]])
+            treated_df['Anomaly'] = anomalies
+
+            # Plot the time series data
+            fig = go.Figure()
+
+            inactivity_mask = (treated_df[value_column].rolling('10min').max() - treated_df[value_column].rolling('10min').min()) <= 15
+            active_df = treated_df[~inactivity_mask]
+            inactive_df = treated_df[inactivity_mask]
+
+            fig.add_trace(go.Scatter(x=active_df.index, y=active_df[value_column], mode='lines', line=dict(color='blue'), name='Active Periods', connectgaps=True))
+            fig.add_trace(go.Scatter(x=inactive_df.index, y=inactive_df[value_column], mode='lines', line=dict(color='red'), name='Inactivity Periods', connectgaps=True))
+            fig.add_trace(go.Scatter(x=treated_df[treated_df['Anomaly'] == -1].index, y=treated_df[treated_df['Anomaly'] == -1][value_column], mode='markers', name='Anomalies', marker=dict(color='orange')))
+
+            X = np.array((treated_df.index - treated_df.index.min()).total_seconds()).reshape(-1, 1)
+            y = treated_df[value_column].values
+            reg = LinearRegression().fit(X, y)
+            y_pred = reg.predict(X)
+
+            fig.add_trace(go.Scatter(x=treated_df.index, y=y_pred, mode='lines', line=dict(color='green', dash='dash'), name='Regression Line'))
+
+            fig.update_layout(title='Time Series Data with Inactivity Periods, Anomalies, and Regression Line', xaxis_title='DateTime', yaxis_title=value_column)
+            st.plotly_chart(fig)
+            st.markdown("**The time series plot displays the data over time, with blue lines representing active periods, red lines indicating inactivity periods, and orange markers highlighting anomalies. The green dashed line shows the linear regression line, which helps identify the overall trend in the data.**")
 
             decomposition = seasonal_decompose(treated_df[value_column], model='additive', period=30)
             trend = decomposition.trend.dropna()
@@ -528,9 +518,12 @@ def main():
             fig_hist = go.Figure()
             colors = px.colors.qualitative.Plotly
 
-            for i, col in enumerate(df.columns):
-                if pd.api.types.is_numeric_dtype(df[col]):
-                    fig_hist.add_trace(go.Histogram(x=df[col], name=col, marker=dict(color=colors[i % len(colors)]), opacity=0.75))
+            # Filter numeric columns and remove 'Anomaly' and 'Cluster' columns
+            numeric_columns = treated_df.select_dtypes(include=[np.number]).columns
+            filtered_numeric_columns = [col for col in numeric_columns if col not in ['Anomaly', 'Cluster']]
+
+            for i, col in enumerate(filtered_numeric_columns):
+                fig_hist.add_trace(go.Histogram(x=treated_df[col], name=col, marker=dict(color=colors[i % len(colors)]), opacity=0.75))
 
             fig_hist.update_layout(barmode='overlay', title='Histogram of Numeric Columns', xaxis_title='Value', yaxis_title='Count', legend=dict(x=1, y=1, traceorder='normal'), bargap=0.2)
             fig_hist.update_traces(opacity=0.75)
@@ -539,13 +532,13 @@ def main():
             st.markdown("**The histogram visualizes the distribution of the data for each numeric column in the dataset.**")
 
             st.markdown("<div class='pair-plot'>Pair Plot</div>", unsafe_allow_html=True)
-            pair_plot_fig = sns.pairplot(df.select_dtypes(include=[np.number]), diag_kind='kde')
+            pair_plot_fig = sns.pairplot(treated_df[filtered_numeric_columns], diag_kind='kde')
             st.pyplot(pair_plot_fig)
             logging.info("Pair plot generated.")
             st.markdown("**The pair plot displays pairwise relationships in the dataset, showing scatter plots for each pair of features and histograms for individual features.**")
 
             st.markdown("<div class='correlation-heatmap'>Correlation Heatmap</div>", unsafe_allow_html=True)
-            corr = df.corr()
+            corr = treated_df[filtered_numeric_columns].corr()
             fig_heatmap = go.Figure(data=go.Heatmap(z=corr.values, x=corr.index.values, y=corr.columns.values, colorscale='Viridis'))
             fig_heatmap.update_layout(title='Correlation Heatmap')
             st.plotly_chart(fig_heatmap, use_container_width=True)
