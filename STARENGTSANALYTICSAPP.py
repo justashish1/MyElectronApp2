@@ -150,6 +150,15 @@ def custom_css():
                 font-size: 18px;
                 font-weight: bold;
             }
+            .outlier-treatment {
+                font-size: 18px;
+                font-weight: bold;
+                margin-top: 20px;
+                margin-bottom: 20px;
+            }
+            .spacing {
+                margin-top: 50px;
+            }
         </style>
     """, unsafe_allow_html=True)
 
@@ -275,6 +284,16 @@ def download_manual():
         st.markdown(href, unsafe_allow_html=True)
     else:
         st.warning("Manual not available. Send request to Ashish Malviya!")
+
+# Outlier treatment function
+def treat_outliers(df, value_column):
+    Q1 = df[value_column].quantile(0.25)
+    Q3 = df[value_column].quantile(0.75)
+    IQR = Q3 - Q1
+    lower_bound = Q1 - 1.5 * IQR
+    upper_bound = Q3 + 1.5 * IQR
+    treated_df = df[(df[value_column] >= lower_bound) & (df[value_column] <= upper_bound)]
+    return treated_df
 
 # Main function
 def main():
@@ -412,12 +431,34 @@ def main():
             st.plotly_chart(fig)
             st.markdown("**The time series plot displays the data over time, with blue lines representing active periods, red lines indicating inactivity periods, and orange markers highlighting anomalies. The green dashed line shows the linear regression line, which helps identify the overall trend in the data.**")
 
+            # Initial box plot
             box_fig = go.Figure()
             box_fig.add_trace(go.Box(y=resampled_df[value_column], name=value_column, boxpoints='all', jitter=0.3, pointpos=-1.8, marker_color='blue'))
             st.plotly_chart(box_fig)
             st.markdown("**The box plot visualizes the distribution of the selected data. It displays the median (line inside the box), the interquartile range (the box), and potential outliers (points outside the whiskers). The box plot helps identify the central tendency and variability of the data.**")
 
-            decomposition = seasonal_decompose(resampled_df[value_column], model='additive', period=30)
+            # Outlier treatment selection
+            st.markdown("<div class='outlier-treatment'>Outlier Treatment</div>", unsafe_allow_html=True)
+            outlier_treatment = st.radio("Do you want to treat outliers?", ("No", "Yes"))
+            outlier_placeholder = st.empty()
+
+            if outlier_treatment == "Yes":
+                st.markdown("**Yes- Data Outliers will be treated**")
+                treated_df = treat_outliers(resampled_df, value_column)
+                # Second box plot after outlier treatment
+                with outlier_placeholder:
+                    treated_box_fig = go.Figure()
+                    treated_box_fig.add_trace(go.Box(y=treated_df[value_column], name=value_column, boxpoints='all', jitter=0.3, pointpos=-1.8, marker_color='blue'))
+                    st.plotly_chart(treated_box_fig)
+                    st.markdown("**The second box plot visualizes the distribution of the data after outlier treatment.**")
+            else:
+                st.markdown("**No- Data Outliers will not be treated**")
+                treated_df = resampled_df
+                outlier_placeholder.empty()
+
+            # Continue with analysis and plots using treated_df
+
+            decomposition = seasonal_decompose(treated_df[value_column], model='additive', period=30)
             trend = decomposition.trend.dropna()
             seasonal = decomposition.seasonal.dropna()
             resid = decomposition.resid.dropna()
@@ -430,32 +471,32 @@ def main():
             st.markdown("**The time series decomposition plot breaks down the data into its trend, seasonal, and residual components. The trend component shows the long-term direction, the seasonal component captures repeating patterns, and the residual component represents random noise.**")
 
             control_chart_fig = go.Figure()
-            control_chart_fig.add_trace(go.Scatter(x=resampled_df.index, y=resampled_df[value_column], mode='lines', name='Load cell Value', line=dict(color='blue')))
-            control_chart_fig.add_trace(go.Scatter(x=resampled_df.index, y=resampled_df[value_column].rolling(window=30).std(), mode='lines', name='Rolling Std', line=dict(color='orange'), yaxis='y2'))
+            control_chart_fig.add_trace(go.Scatter(x=treated_df.index, y=treated_df[value_column], mode='lines', name='Load cell Value', line=dict(color='blue')))
+            control_chart_fig.add_trace(go.Scatter(x=treated_df.index, y=treated_df[value_column].rolling(window=30).std(), mode='lines', name='Rolling Std', line=dict(color='orange'), yaxis='y2'))
             control_chart_fig.update_layout(title='Control Charts (X-bar and R charts)', xaxis_title='DateTime', yaxis=dict(title=value_column), yaxis2=dict(title='Standard Deviation', overlaying='y', side='right'))
             st.plotly_chart(control_chart_fig, use_container_width=True)
             st.markdown("**The control chart monitors the process stability over time. The X-bar chart shows the mean of the process, and the R chart displays the range of the process variation. These charts help identify any unusual variations in the process.**")
 
             kmeans = KMeans(n_clusters=3)
-            resampled_df['Cluster'] = kmeans.fit_predict(resampled_df[[value_column]])
-            num_clusters = len(set(resampled_df['Cluster']))
+            treated_df['Cluster'] = kmeans.fit_predict(treated_df[[value_column]])
+            num_clusters = len(set(treated_df['Cluster']))
 
             if num_clusters > 1:
-                silhouette_avg = silhouette_score(resampled_df[[value_column]], resampled_df['Cluster'])
+                silhouette_avg = silhouette_score(treated_df[[value_column]], treated_df['Cluster'])
             else:
                 silhouette_avg = 'N/A'
 
             cluster_fig = go.Figure()
             colors = ['blue', 'orange', 'green']
             for cluster in range(num_clusters):
-                cluster_data = resampled_df[resampled_df['Cluster'] == cluster]
+                cluster_data = treated_df[treated_df['Cluster'] == cluster]
                 cluster_fig.add_trace(go.Scatter(x=cluster_data.index, y=cluster_data[value_column], mode='markers', marker=dict(color=colors[cluster]), name=f'Cluster {cluster}'))
 
             cluster_fig.update_layout(title=f'KMeans Clustering (Silhouette Score: {silhouette_avg})', xaxis_title='DateTime', yaxis_title=value_column)
             st.plotly_chart(cluster_fig, use_container_width=True)
             st.markdown("**The clustering plot uses KMeans to group the data into clusters. Each color represents a different cluster, helping to identify patterns and similarities within the data. The silhouette score indicates how well the data points fit within their clusters, with higher values representing better clustering.**")
 
-            stats = resampled_df[value_column].describe(percentiles=[.25, .5, .75])
+            stats = treated_df[value_column].describe(percentiles=[.25, .5, .75])
 
             total_active_time = active_df.shape[0] * sampling_interval
             total_inactive_time = inactive_df.shape[0] * sampling_interval
@@ -524,7 +565,7 @@ def main():
             poly_features = np.polyfit(X.flatten(), y, degree)
             poly_model = np.poly1d(poly_features)
             y_poly_pred = poly_model(X.flatten())
-            fig.add_trace(go.Scatter(x=resampled_df.index, y=y_poly_pred[:len(resampled_df.index)], mode='lines', line=dict(color='purple', dash='dot'), name=f'Polynomial Regression (degree {degree})'))
+            fig.add_trace(go.Scatter(x=treated_df.index, y=y_poly_pred[:len(treated_df.index)], mode='lines', line=dict(color='purple', dash='dot'), name=f'Polynomial Regression (degree {degree})'))
             st.plotly_chart(fig)
 
             forecast_periods = st.number_input("Forecasting Period (days)", min_value=1, max_value=365, value=180)
@@ -532,7 +573,7 @@ def main():
             if st.button("Forecast Future"):
                 with st.spinner('Forecasting...'):
                     try:
-                        forecast = generate_forecast(resampled_df, value_column, forecast_periods)
+                        forecast = generate_forecast(treated_df, value_column, forecast_periods)
                         fig_forecast = go.Figure()
                         fig_forecast.add_trace(go.Scatter(x=forecast['ds'], y=forecast['yhat'], mode='lines', name='Forecast', line=dict(color='blue')))
                         fig_forecast.add_trace(go.Scatter(x=forecast['ds'], y=forecast['yhat_lower'], fill=None, mode='lines', line=dict(color='gray'), showlegend=False))
