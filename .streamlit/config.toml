@@ -5,10 +5,9 @@ backgroundColor="{#FFFFFF}"
 textColor="{serif}"
 language="toml"
 
-
-    --theme.primaryColor="{#32c800}" 
-    --theme.backgroundColor="{#FFFFFF}" 
-    --theme.textColor="{serif}"
+--theme.primaryColor="{#32c800}" 
+--theme.backgroundColor="{#FFFFFF}" 
+--theme.textColor="{serif}"
 
 
 
