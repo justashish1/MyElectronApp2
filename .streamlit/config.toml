@@ -1,10 +1,9 @@
-st.subheader("Config file (`.streamlit/config.toml`)")
-st.code(f"""
+
 [theme]
 primaryColor="{#32c800}"
 backgroundColor="{#FFFFFF}"
 textColor="{serif}"
-""", language="toml")
+ language="toml"
 
 st.subheader("Command line argument")
 st.code(f"""
