@@ -1,4 +1,7 @@
+st.subheader("Config file (`.streamlit/config.toml`)")
+st.code(f"""
 [theme]
 base="light"
 primaryColor="#32c800"
 font="serif"
+""", language="toml")
