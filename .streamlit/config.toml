@@ -3,14 +3,12 @@
 primaryColor="{#32c800}"
 backgroundColor="{#FFFFFF}"
 textColor="{serif}"
- language="toml"
+language="toml"
 
-st.subheader("Command line argument")
-st.code(f"""
-streamlit run app.py \\\\
-    --theme.primaryColor="{#32c800}" \\\\
-    --theme.backgroundColor="{#FFFFFF}" \\\\
+
+    --theme.primaryColor="{#32c800}" 
+    --theme.backgroundColor="{#FFFFFF}" 
     --theme.textColor="{serif}"
-""")
+
 
 
