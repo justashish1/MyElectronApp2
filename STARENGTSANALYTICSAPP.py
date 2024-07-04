@@ -284,7 +284,7 @@ def download_manual():
             manual_data = file.read()
         file_name = os.path.basename(manual_path)
         b64 = base64.b64encode(manual_data).decode()
-        href = f'<a href="data:application/pdf;base64,{b64}" download="{file_name}">Download Manual: {file_name}</a>'
+        href = f'<a href="data:application/pdf;base64,{b64}" download="{file_name}"> {file_name}</a>'
         st.markdown(href, unsafe_allow_html=True)
     else:
         st.warning("Manual not available. Send request to Ashish Malviya!")
