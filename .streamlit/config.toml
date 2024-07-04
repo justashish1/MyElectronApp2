@@ -1,13 +1,14 @@
 [theme]
 primaryColor="#32c800"
-backgroundColor="#1e1e1e"
-secondaryBackgroundColor="#000000"
-textColor="#f7f1f1"
+backgroundColor="#252323"
+secondaryBackgroundColor="#0a0a0a"
+textColor="#fdfdfd"
 font="serif"
 language="toml"
 
 --theme.primaryColor="#32c800"
---theme.backgroundColor="#1e1e1e"
+--theme.backgroundColor="#252323"
 --theme.secondaryBackgroundColor="#000000"
---theme.textColor="#f7f1f1"
+--theme.textColor="#fdfdfd"
 --theme.font="serif"
+
