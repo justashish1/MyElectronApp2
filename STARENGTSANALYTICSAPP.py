@@ -37,13 +37,6 @@ def load_logo(filename):
         encoded_image = base64.b64encode(image_file.read()).decode()
     return f"data:image/png;base64,{encoded_image}"
 
-# Developer info at the bottom left
-st.markdown("""
-    <div class='developer-info'>
-        Developer Name : Ashish Malviya<br>
-    </div>
-""", unsafe_allow_html=True)
-
 # Custom CSS for styling
 def custom_css():
     st.markdown("""
