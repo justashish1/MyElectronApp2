@@ -209,59 +209,54 @@ def load_data(uploaded_file):
     else:
         return pd.read_csv(uploaded_file)
 
-@st.cache_data
-def preprocess_data(df):
-    datetime_columns = ['datetime', 'date time', 'Date Time', 'DateTime', 'data', 'timestamp', 'Timestamp', 'Time Stamp', 'time stamp, Starttime, Endtime']
-    date_formats = [
-        '%d/%m/%Y %I:%M:%S.%f %p',
-        '%d/%m/%Y %I:%M:%S.%f',
-        '%d/%m/%Y %I:%M:%S.',
-        '%d/%m/%Y'
-    ]
-    for col in datetime_columns:
-        if col in df.columns:
-            for fmt in date_formats:
-                try:
-                    df[col] = pd.to_datetime(df[col], format=fmt, errors='coerce')
-                    df = df.dropna(subset=[col])
-                    df.set_index(col, inplace=True)
-                    return df
-                except ValueError:
-                    continue
-    st.markdown('<div class="custom-error">The uploaded file does not contain a valid datetime column or the format is incorrect.</div>', unsafe_allow_html=True)
-    return df
+# Prompt the user to select the datetime column
+def select_datetime_column(df):
+    datetime_columns = df.columns
+    selected_column = st.selectbox('Select the datetime column:', datetime_columns)
+    return selected_column
 
 # Validate 'DateTime' column and format
-def validate_datetime_column(df):
-    datetime_columns = ['datetime', 'date time', 'Date Time', 'DateTime', 'data', 'timestamp', 'Timestamp', 'Time Stamp', 'time stamp, Starttime, Endtime']
+def validate_datetime_column(df, datetime_col):
     date_formats = [
         '%d/%m/%Y %I:%M:%S.%f %p',
         '%d/%m/%Y %I:%M:%S.%f',
         '%d/%m/%Y %I:%M:%S.',
-        '%d/%m/%Y'
+        '%d/%m/%Y %I'
     ]
     
-    # Check for any of the allowed datetime column names
-    valid_column = False
-    for col in datetime_columns:
-        if col in df.columns:
-            # Try to parse the datetime with the allowed formats
-            for fmt in date_formats:
-                try:
-                    pd.to_datetime(df[col], format=fmt)
-                    valid_column = True
-                    return True
-                except ValueError:
-                    continue
-    
-    if not valid_column:
-        st.markdown('<div class="custom-error">The uploaded file does not contain a valid datetime column or the format is incorrect.</div>', unsafe_allow_html=True)
-        logging.error("The uploaded file does not contain a valid datetime column or the format is incorrect.")
-        st.write("### Debugging Information")
-        st.write(df.head())  # Display the first few rows of the dataframe for debugging
-        return False
+    for fmt in date_formats:
+        try:
+            pd.to_datetime(df[datetime_col], format=fmt)
+            return True
+        except ValueError:
+            continue
 
-    return True
+    st.markdown('<div class="custom-error">The uploaded file does not contain a valid datetime column or the format is incorrect.</div>', unsafe_allow_html=True)
+    logging.error("The uploaded file does not contain a valid datetime column or the format is incorrect.")
+    st.write("### Debugging Information")
+    st.write(df.head())  # Display the first few rows of the dataframe for debugging
+    return False
+
+# Preprocess data
+@st.cache_data
+def preprocess_data(df, datetime_col):
+    date_formats = [
+        '%d/%m/%Y %I:%M:%S.%f %p',
+        '%d/%m/%Y %I:%M:%S.%f',
+        '%d/%m/%Y %I:%M:%S.',
+        '%d/%m/%Y %I'
+    ]
+    for fmt in date_formats:
+        try:
+            df[datetime_col] = pd.to_datetime(df[datetime_col], format=fmt, errors='coerce')
+            df = df.dropna(subset=[datetime_col])
+            df.set_index(datetime_col, inplace=True)
+            return df
+        except ValueError:
+            continue
+    
+    st.markdown('<div class="custom-error">The uploaded file does not contain a valid datetime column or the format is incorrect.</div>', unsafe_allow_html=True)
+    return df
 
 # Resample dataframe
 @st.cache_data
@@ -322,7 +317,6 @@ def main():
     logo_src = load_logo('logo.png')
     add_js_script()
 
-    # Get the timezone from the hidden HTML element using Streamlit's query_params
     timezone = st.query_params.get('timezone', ['UTC'])[0]
 
     display_logo_and_date(logo_src, timezone)
@@ -355,10 +349,12 @@ def main():
             st.write(f"Loaded file: {uploaded_file.name} (Total processing time: {loading_time:.2f} seconds)")
             logging.info(f"Loaded file: {uploaded_file.name} (Total processing time: {loading_time:.2f} seconds)")
 
-            if not validate_datetime_column(df):
+            datetime_col = select_datetime_column(df)
+
+            if not validate_datetime_column(df, datetime_col):
                 return
 
-            df = preprocess_data(df)
+            df = preprocess_data(df, datetime_col)
 
             st.session_state.df = df
 
@@ -371,7 +367,7 @@ def main():
             start_time_str = st.selectbox("Start Time", time_options, index=start_time_index)
             end_time_index = time_options.index(df.index.max().strftime('%I:%M:%S %p'))
             end_time_str = st.selectbox("End Time", time_options, index=end_time_index)
-            value_column = st.selectbox("Value Column", [col for col in df.columns if col != 'DateTime'])
+            value_column = st.selectbox("Value Column", [col for col in df.columns if col != datetime_col])
             sampling_interval = st.slider("Sampling Interval (minutes)", 1, 60, 1)
             
             st.markdown("<hr>", unsafe_allow_html=True)
@@ -549,14 +545,13 @@ def main():
         fig_hist = go.Figure()
         colors = px.colors.qualitative.Plotly
 
-
         st.markdown("<hr>", unsafe_allow_html=True)
 
         # Filter numeric columns and remove 'Anomaly' and 'Cluster' columns
         numeric_columns = treated_df.select_dtypes(include=[np.number]).columns
         filtered_numeric_columns = [col for col in numeric_columns if col not in ['Anomaly', 'Cluster']]
 
-        for i, col in enumerate(filtered_numeric_columns):
+        for i, col in enumerate(filtered_numeric_columns):  # Corrected line
             fig_hist.add_trace(go.Histogram(x=treated_df[col], name=col, marker=dict(color=colors[i % len(colors)]), opacity=0.75))
 
         fig_hist.update_layout(barmode='overlay', title='Histogram of Numeric Columns', xaxis_title='Value', yaxis_title='Count', legend=dict(x=1, y=1, traceorder='normal'), bargap=0.2)
@@ -568,8 +563,8 @@ def main():
         st.markdown("<hr>", unsafe_allow_html=True)
 
         st.markdown("<div class='pair-plot'>Pair Plot</div>", unsafe_allow_html=True)
-        sns.set_style("white") 
         pair_plot_fig = sns.pairplot(treated_df[filtered_numeric_columns], diag_kind='kde')
+        sns.set_style("white") 
         st.pyplot(pair_plot_fig)
         logging.info("Pair plot generated.")
         st.markdown("**The pair plot displays pairwise relationships in the dataset, showing scatter plots for each pair of features and histograms for individual features.**")
