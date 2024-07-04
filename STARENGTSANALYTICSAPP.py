@@ -36,7 +36,7 @@ def load_logo(filename):
     with open(filename, "rb") as image_file:
         encoded_image = base64.b64encode(image_file.read()).decode()
     return f"data:image/png;base64,{encoded_image}"
-    
+
 # Developer info at the bottom left
 st.markdown("""
     <div class='developer-info'>
@@ -93,7 +93,7 @@ def custom_css():
                 color: #32c800;
                 align-items: center.
             }
-           .developer-info {
+            .developer-info {
                 position: fixed;
                 bottom: 10px;
                 left: 10px;
@@ -136,15 +136,6 @@ def custom_css():
             .df-shape-size {
             }
             .download-manual {
-                font-size: 18px.
-                font-weight: bold.
-            }
-            .additional-visualizations {
-                font-size: 20px.
-                font-weight: bold.
-                margin-top: 20px.
-            }
-            .histogram, .user-annotations, .advanced-analytics, .correlation-heatmap, .pair-plot {
                 font-size: 18px.
                 font-weight: bold.
             }
@@ -387,17 +378,27 @@ def main():
     if 'df' in st.session_state:
         df = st.session_state.df
 
-        st.markdown("<div class='df-overview-title'>DataFrame Overview</div>", unsafe_allow_html=True)
+        
+        st.markdown("<hr>", unsafe_allow_html=True)
+
+        st.markdown("**DataFrame Overview:**", unsafe_allow_html=True)
         df_display = df.head().copy()
         df_display.index = df_display.index.strftime('%Y-%m-%d %I:%M:%S %p')
         st.write(df_display)
         buffer = io.StringIO()
+        
+        st.markdown("<hr>", unsafe_allow_html=True)
+        st.markdown("**Data type info:**", unsafe_allow_html=True)
         df.info(buf=buffer)
         s = buffer.getvalue()
         st.text(s)
-        st.markdown("<div class='df-overview-section'>Shape</div>", unsafe_allow_html=True)
+        
+        st.markdown("<hr>", unsafe_allow_html=True)
+        st.markdown("**Number of rows and columns in dataset:**", unsafe_allow_html=True)
         st.markdown(f"<div class='df-shape-size'>{df.shape}</div>", unsafe_allow_html=True)
-        st.markdown("<div class='df-overview-section'>Size</div>", unsafe_allow_html=True)
+        
+        st.markdown("<hr>", unsafe_allow_html=True)
+        st.markdown("**Total number of data points:**", unsafe_allow_html=True)
         st.markdown(f"<div class='df-shape-size'>{df.size}</div>", unsafe_allow_html=True)
 
         for col in df.select_dtypes(include=['category', 'object']).columns:
@@ -441,6 +442,9 @@ def main():
         st.plotly_chart(fig)
         st.markdown("**The time series plot displays the data over time, with blue lines representing active periods, red lines indicating inactivity periods, and orange markers highlighting anomalies. The green dashed line shows the linear regression line, which helps identify the overall trend in the data.**")
 
+
+        st.markdown("<hr>", unsafe_allow_html=True)
+
         decomposition = seasonal_decompose(treated_df[value_column], model='additive', period=30)
         trend = decomposition.trend.dropna()
         seasonal = decomposition.seasonal.dropna()
@@ -453,12 +457,18 @@ def main():
         st.plotly_chart(decomposition_fig, use_container_width=True)
         st.markdown("**The time series decomposition plot breaks down the data into its trend, seasonal, and residual components. The trend component shows the long-term direction, the seasonal component captures repeating patterns, and the residual component represents random noise.**")
 
+
+        st.markdown("<hr>", unsafe_allow_html=True)
+
         control_chart_fig = go.Figure()
         control_chart_fig.add_trace(go.Scatter(x=treated_df.index, y=treated_df[value_column], mode='lines', name='Load cell Value', line=dict(color='blue')))
         control_chart_fig.add_trace(go.Scatter(x=treated_df.index, y=treated_df[value_column].rolling(window=30).std(), mode='lines', name='Rolling Std', line=dict(color='orange'), yaxis='y2'))
         control_chart_fig.update_layout(title='Control Charts (X-bar and R charts)', xaxis_title='DateTime', yaxis=dict(title=value_column), yaxis2=dict(title='Standard Deviation', overlaying='y', side='right'))
         st.plotly_chart(control_chart_fig, use_container_width=True)
         st.markdown("**The control chart monitors the process stability over time. The X-bar chart shows the mean of the process, and the R chart displays the range of the process variation. These charts help identify any unusual variations in the process.**")
+
+
+        st.markdown("<hr>", unsafe_allow_html=True)
 
         kmeans = KMeans(n_clusters=3)
         treated_df['Cluster'] = kmeans.fit_predict(treated_df[[value_column]])
@@ -478,6 +488,9 @@ def main():
         cluster_fig.update_layout(title=f'KMeans Clustering (Silhouette Score: {silhouette_avg})', xaxis_title='DateTime', yaxis_title=value_column)
         st.plotly_chart(cluster_fig, use_container_width=True)
         st.markdown("**The clustering plot uses KMeans to group the data into clusters. Each color represents a different cluster, helping to identify patterns and similarities within the data. The silhouette score indicates how well the data points fit within their clusters, with higher values representing better clustering.**")
+
+
+        st.markdown("<hr>", unsafe_allow_html=True)
 
         stats = treated_df[value_column].describe(percentiles=[.25, .5, .75])
 
@@ -505,11 +518,12 @@ def main():
         st.markdown(stats_output)
         logging.info("Descriptive statistics generated.")
 
-        st.markdown("<div class='additional-visualizations'>Additional Visualizations</div>", unsafe_allow_html=True)
-
-        st.markdown("<div class='histogram'>Histogram</div>", unsafe_allow_html=True)
+        st.markdown("<div class='histogram'></div>", unsafe_allow_html=True)
         fig_hist = go.Figure()
         colors = px.colors.qualitative.Plotly
+
+
+        st.markdown("<hr>", unsafe_allow_html=True)
 
         # Filter numeric columns and remove 'Anomaly' and 'Cluster' columns
         numeric_columns = treated_df.select_dtypes(include=[np.number]).columns
@@ -524,19 +538,25 @@ def main():
         logging.info("Histogram generated.")
         st.markdown("**The histogram visualizes the distribution of the data for each numeric column in the dataset.**")
 
+        st.markdown("<hr>", unsafe_allow_html=True)
+
         st.markdown("<div class='pair-plot'>Pair Plot</div>", unsafe_allow_html=True)
         pair_plot_fig = sns.pairplot(treated_df[filtered_numeric_columns], diag_kind='kde')
         st.pyplot(pair_plot_fig)
         logging.info("Pair plot generated.")
         st.markdown("**The pair plot displays pairwise relationships in the dataset, showing scatter plots for each pair of features and histograms for individual features.**")
 
-        st.markdown("<div class='correlation-heatmap'>Correlation Heatmap</div>", unsafe_allow_html=True)
+        st.markdown("<hr>", unsafe_allow_html=True)
+
+        st.markdown("<div class='correlation-heatmap'></div>", unsafe_allow_html=True)
         corr = treated_df[filtered_numeric_columns].corr()
         fig_heatmap = go.Figure(data=go.Heatmap(z=corr.values, x=corr.index.values, y=corr.columns.values, colorscale='Viridis'))
         fig_heatmap.update_layout(title='Correlation Heatmap')
         st.plotly_chart(fig_heatmap, use_container_width=True)
         logging.info("Correlation heatmap generated.")
         st.markdown("**The correlation heatmap displays the correlation coefficients between pairs of features in the dataset. The colors represent the strength of the correlations.**")
+
+        st.markdown("<hr>", unsafe_allow_html=True)
 
         if 'annotations' in st.session_state:
             for annotation_text, annotation_x, annotation_y in st.session_state.annotations:
@@ -550,6 +570,8 @@ def main():
             y_poly_pred = poly_model(X.flatten())
             fig.add_trace(go.Scatter(x=treated_df.index, y=y_poly_pred[:len(treated_df.index)], mode='lines', line=dict(color='purple', dash='dot'), name=f'Polynomial Regression (degree {degree})'))
             st.plotly_chart(fig)
+
+        st.markdown("<hr>", unsafe_allow_html=True)
 
         if st.session_state.get('forecast_future', False):
             with st.spinner('Forecasting...'):
@@ -571,6 +593,8 @@ def main():
                 except Exception as e:
                     st.error(f"Forecasting failed: {e}")
                     logging.error(f"Forecasting failed: {e}")
+
+        st.markdown("<hr>", unsafe_allow_html=True)            
 
 if __name__ == "__main__":
     main()
