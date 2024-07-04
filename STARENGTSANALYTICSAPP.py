@@ -542,6 +542,7 @@ def main():
 
         st.markdown("<div class='pair-plot'>Pair Plot</div>", unsafe_allow_html=True)
         pair_plot_fig = sns.pairplot(treated_df[filtered_numeric_columns], diag_kind='kde')
+        sns.set_style("white") 
         st.pyplot(pair_plot_fig)
         logging.info("Pair plot generated.")
         st.markdown("**The pair plot displays pairwise relationships in the dataset, showing scatter plots for each pair of features and histograms for individual features.**")
