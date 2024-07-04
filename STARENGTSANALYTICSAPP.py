@@ -91,76 +91,76 @@ def custom_css():
                 display: flex;
                 justify-content: space-between;
                 color: #32c800;
-                align-items: center;
+                align-items: center.
             }
             .developer-info {
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                text-align:left;
-                margin: 10px;
-                font-size: 12px;
+                position: fixed.
+                bottom: 0.
+                left: 0.
+                text-align: left.
+                margin: 10px.
+                font-size: 12px.
             }
             .stProgress > div > div > div > div {
-                background-color: #32c800;
+                background-color: #32c800.
             }
             .content {
-                padding-top: 0px;
+                padding-top: 0px.
             }
             .stButton > button {
-                background-color: #32c800;
-                color: white;
-                border: none;
-                font-weight: bold;
+                background-color: #32c800.
+                color: white.
+                border: none.
+                font-weight: bold.
             }
             .stButton > button:hover {
-                color: white;
-                background-color: #32c800;
+                color: white.
+                background-color: #32c800.
             }
             .custom-error {
-                background-color: #32c800;
-                color: white;
-                padding: 10px;
-                border-radius: 5px;
-                text-align: center;
-                font-weight: bold;
+                background-color: #32c800.
+                color: white.
+                padding: 10px.
+                border-radius: 5px.
+                text-align: center.
+                font-weight: bold.
             }
             .df-overview-title {
-                font-size: 16px;
-                font-weight: bold;
+                font-size: 16px.
+                font-weight: bold.
             }
             .df-overview-section {
-                font-size: 16px;
-                font-weight: bold;
+                font-size: 16px.
+                font-weight: bold.
                 color: black.
             }
             .df-shape-size {
             }
             .download-manual {
-                font-size: 18px;
+                font-size: 18px.
                 font-weight: bold.
             }
             .additional-visualizations {
-                font-size: 20px;
-                font-weight: bold;
+                font-size: 20px.
+                font-weight: bold.
                 margin-top: 20px.
             }
             .histogram, .user-annotations, .advanced-analytics, .correlation-heatmap, .pair-plot {
-                font-size: 18px;
+                font-size: 18px.
                 font-weight: bold.
             }
             .outlier-treatment {
-                font-size: 18px;
+                font-size: 18px.
                 font-weight: bold.
-                margin-top: 20px;
+                margin-top: 20px.
                 margin-bottom: 20px.
             }
             .spacing {
                 margin-top: 50px.
             }
             .left-side, .right-side {
-                height: 100%;
-                overflow-y: auto;
+                height: 100%.
+                overflow-y: auto.
             }
         </style>
     """, unsafe_allow_html=True)
@@ -345,6 +345,8 @@ def main():
 
             st.session_state.df = df
 
+            st.markdown("<hr>", unsafe_allow_html=True)
+
             start_date = st.date_input("Start Date", min_value=df.index.min().date(), max_value=df.index.max().date(), value=df.index.min().date())
             end_date = st.date_input("End Date", min_value=df.index.min().date(), max_value=df.index.max().date(), value=df.index.max().date())
             time_options = generate_time_options()
@@ -354,7 +356,12 @@ def main():
             end_time_str = st.selectbox("End Time", time_options, index=end_time_index)
             value_column = st.selectbox("Value Column", [col for col in df.columns if col != 'DateTime'])
             sampling_interval = st.slider("Sampling Interval (minutes)", 1, 60, 1)
+            
+            st.markdown("<hr>", unsafe_allow_html=True)
+            
             outlier_treatment = st.radio("Do you want to treat outliers?", ("No", "Yes"))
+
+            st.markdown("<hr>", unsafe_allow_html=True)
             
             degree = st.slider("Degree of Polynomial Regression", 1, 10, 2, key="degree_slider")
             annotation_text = st.text_input("Enter annotation text", key="annotation_text_input")
@@ -365,10 +372,16 @@ def main():
                     st.session_state.annotations = []
                 st.session_state.annotations.append((annotation_text, annotation_x, annotation_y))
                 st.experimental_rerun()
+
+            st.markdown("<hr>", unsafe_allow_html=True)
+            
             forecast_periods = st.number_input("Forecasting Period (days)", min_value=1, max_value=365, value=180)    
             if st.button("Forecast Future", key="forecast_future_button"):
                 st.session_state.forecast_future = True
                 st.experimental_rerun()
+            
+            st.markdown("<hr>", unsafe_allow_html=True)
+            
             st.markdown("<div class='download-manual'>Download Manual</div>", unsafe_allow_html=True)
             download_manual()
 
