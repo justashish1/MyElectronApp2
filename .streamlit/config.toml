@@ -1,13 +1,13 @@
-
 [theme]
-primaryColor="{#32c800}"
-backgroundColor="{#FFFFFF}"
-textColor="{serif}"
+primaryColor="#32c800"
+backgroundColor="#1e1e1e"
+secondaryBackgroundColor="#000000"
+textColor="#f7f1f1"
+font="serif"
 language="toml"
 
---theme.primaryColor="{#32c800}" 
---theme.backgroundColor="{#FFFFFF}" 
---theme.textColor="{serif}"
-
-
-
+--theme.primaryColor="#32c800"
+--theme.backgroundColor="#1e1e1e"
+--theme.secondaryBackgroundColor="#000000"
+--theme.textColor="#f7f1f1"
+--theme.font="serif"
