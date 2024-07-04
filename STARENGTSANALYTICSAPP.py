@@ -209,31 +209,58 @@ def load_data(uploaded_file):
     else:
         return pd.read_csv(uploaded_file)
 
-# Preprocess data
 @st.cache_data
 def preprocess_data(df):
-    if 'DateTime' in df.columns:
-        df['DateTime'] = pd.to_datetime(df['DateTime'], format='%d/%m/%Y %I:%M:%S.%f %p', errors='coerce')
-        df = df.dropna(subset=['DateTime'])
-        df.set_index('DateTime', inplace=True)
+    datetime_columns = ['datetime', 'date time', 'Date Time', 'DateTime', 'data', 'timestamp', 'Timestamp', 'Time Stamp', 'time stamp, Starttime, Endtime']
+    date_formats = [
+        '%d/%m/%Y %I:%M:%S.%f %p',
+        '%d/%m/%Y %I:%M:%S.%f',
+        '%d/%m/%Y %I:%M:%S.',
+        '%d/%m/%Y'
+    ]
+    for col in datetime_columns:
+        if col in df.columns:
+            for fmt in date_formats:
+                try:
+                    df[col] = pd.to_datetime(df[col], format=fmt, errors='coerce')
+                    df = df.dropna(subset=[col])
+                    df.set_index(col, inplace=True)
+                    return df
+                except ValueError:
+                    continue
+    st.markdown('<div class="custom-error">The uploaded file does not contain a valid datetime column or the format is incorrect.</div>', unsafe_allow_html=True)
     return df
 
 # Validate 'DateTime' column and format
 def validate_datetime_column(df):
-    if 'DateTime' not in df.columns:
-        st.markdown('<div class="custom-error">The uploaded file does not contain a \'DateTime\' column The correct column name is DateTime and format is DD/MM/YYYY hh:mm:ss.SSS AM/PM.</div>', unsafe_allow_html=True)
-        logging.error("The uploaded file does not contain a 'DateTime' column, The correct column name is DateTime and format is DD/MM/YYYY hh:mm:ss.SSS AM/PM")
+    datetime_columns = ['datetime', 'date time', 'Date Time', 'DateTime', 'data', 'timestamp', 'Timestamp', 'Time Stamp', 'time stamp, Starttime, Endtime']
+    date_formats = [
+        '%d/%m/%Y %I:%M:%S.%f %p',
+        '%d/%m/%Y %I:%M:%S.%f',
+        '%d/%m/%Y %I:%M:%S.',
+        '%d/%m/%Y'
+    ]
+    
+    # Check for any of the allowed datetime column names
+    valid_column = False
+    for col in datetime_columns:
+        if col in df.columns:
+            # Try to parse the datetime with the allowed formats
+            for fmt in date_formats:
+                try:
+                    pd.to_datetime(df[col], format=fmt)
+                    valid_column = True
+                    return True
+                except ValueError:
+                    continue
+    
+    if not valid_column:
+        st.markdown('<div class="custom-error">The uploaded file does not contain a valid datetime column or the format is incorrect.</div>', unsafe_allow_html=True)
+        logging.error("The uploaded file does not contain a valid datetime column or the format is incorrect.")
         st.write("### Debugging Information")
         st.write(df.head())  # Display the first few rows of the dataframe for debugging
         return False
-    try:
-        pd.to_datetime(df['DateTime'], format='%d/%m/%Y %I:%M:%S.%f %p')
-    except ValueError:
-        st.markdown('<div class="custom-error">The \'DateTime\' column is not in the correct datetime format (DD/MM/YYYY hh:mm:ss.SSS AM/PM).</div>', unsafe_allow_html=True)
-        logging.error("The 'DateTime' column is not in the correct datetime format (DD/MM/YYYY hh:mm:ss.SSS AM/PM).")
-        st.write("### Debugging Information")
-        st.write(df.head())  # Display the first few rows of the dataframe for debugging
-        return False
+
     return True
 
 # Resample dataframe
@@ -541,8 +568,8 @@ def main():
         st.markdown("<hr>", unsafe_allow_html=True)
 
         st.markdown("<div class='pair-plot'>Pair Plot</div>", unsafe_allow_html=True)
-        pair_plot_fig = sns.pairplot(treated_df[filtered_numeric_columns], diag_kind='kde')
         sns.set_style("white") 
+        pair_plot_fig = sns.pairplot(treated_df[filtered_numeric_columns], diag_kind='kde')
         st.pyplot(pair_plot_fig)
         logging.info("Pair plot generated.")
         st.markdown("**The pair plot displays pairwise relationships in the dataset, showing scatter plots for each pair of features and histograms for individual features.**")
