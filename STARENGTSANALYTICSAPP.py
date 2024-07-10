@@ -79,7 +79,7 @@ def custom_css():
                 text-align: center;
             }
             .logo {
-                height: 45px;
+                height: 55px;
                 display: inline-block;
                 margin-left: auto;
                 margin-right: 10px;
