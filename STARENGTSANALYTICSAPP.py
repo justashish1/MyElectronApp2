@@ -40,7 +40,7 @@ def load_logo(filename):
 # Developer info at the bottom left
 st.markdown("""
     <div class='developer-info'>
-        Developer Name : Ashish Malviya Version 1.0.18<br>
+        Developer Name : Ashish Malviya Version 1.0.19<br>
     </div>
 """, unsafe_allow_html=True)
 
