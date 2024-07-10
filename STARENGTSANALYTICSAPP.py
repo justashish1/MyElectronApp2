@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import base64
@@ -20,38 +19,38 @@ import io
 import os
 import pytz
 
-# Set up logging
+# **Setup logging to record events, errors, and debug information.**
 logging.basicConfig(filename='app.log', level=logging.INFO, format='%(asctime)s %(levelname)s:%(message)s')
 logging.info('Application started')
 
-# Set the page configuration
-st.set_page_config(page_title="STARENGTS Timeseries Analysis Application", layout="wide")
+# **Configure the Streamlit page with a title and a wide layout.**
+st.set_page_config(page_title="HENKEL Timeseries Analysis Application", layout="wide")
 
-# Generate time options
+# **Generate a list of time options in 12-hour format with AM/PM notation for selection.**
 def generate_time_options():
     return [f"{hour % 12 if hour % 12 else 12:02d}:{minute:02d}:{second:02d} {'AM' if hour < 12 else 'PM'}"
             for hour in range(24) for minute in range(60) for second in range(60)]
 
-# Load logo as base64
+# **Load and encode the logo image as base64 to display in the app.**
 def load_logo(filename):
     with open(filename, "rb") as image_file:
         encoded_image = base64.b64encode(image_file.read()).decode()
     return f"data:image/png;base64,{encoded_image}"
 
-# Developer info at the bottom left
+# **Display developer information at the bottom left of the application.**
 st.markdown("""
     <div class='developer-info'>
         Developer Name : Ashish Malviya<br>
     </div>
 """, unsafe_allow_html=True)
 
-# Custom CSS for styling
+# **Define custom CSS styles for the Streamlit application.**
 def custom_css():
     st.markdown("""
         <style>
             .main-title {
                 font-size: 25px;
-                color: #32c800;
+                color: #FF0000;
                 text-align: center;
                 font-weight: bold;
             }
@@ -74,7 +73,7 @@ def custom_css():
                 position: relative;
                 top: 5px;
                 left: 10px;
-                color: #32c800;
+                color: #FF0000;
             }
             .center-text {
                 text-align: center;
@@ -91,7 +90,7 @@ def custom_css():
                 margin-bottom: 20px;
                 display: flex;
                 justify-content: space-between;
-                color: #32c800;
+                color: #FF0000;
                 align-items: center.
             }
             .developer-info {
@@ -99,26 +98,26 @@ def custom_css():
                 bottom: 10px;
                 left: 10px;
                 text-align: left;
-                font-size: 12px;
+                font-size: 12px.
             }
             .stProgress > div > div > div > div {
-                background-color: #32c800.
+                background-color: #FF0000.
             }
             .content {
                 padding-top: 0px.
             }
             .stButton > button {
-                background-color: #32c800.
+                background-color: #FF0000.
                 color: white.
                 border: none.
                 font-weight: bold.
             }
             .stButton > button:hover {
                 color: white.
-                background-color: #32c800.
+                background-color: #FF0000.
             }
             .custom-error {
-                background-color: #32c800.
+                background-color: #FF0000.
                 color: white.
                 padding: 10px.
                 border-radius: 5px.
@@ -156,12 +155,12 @@ def custom_css():
         </style>
     """, unsafe_allow_html=True)
 
-# Function to get the current date as a string for the clock
+# **Get the current date in the specified timezone.**
 def get_date(timezone_str='UTC'):
     tz = pytz.timezone(timezone_str)
     return datetime.now(tz).strftime('%Y-%m-%d')
 
-# Display the logo and date
+# **Display the logo and current date in the header of the application.**
 def display_logo_and_date(logo_src, timezone_str):
     current_date_html = f"""
         <div class='header'>
@@ -171,7 +170,7 @@ def display_logo_and_date(logo_src, timezone_str):
     """
     st.markdown(current_date_html, unsafe_allow_html=True)
 
-# Add JavaScript for live date and timezone detection
+# **Add JavaScript to update the date in real-time and detect the user's timezone.**
 def add_js_script():
     st.markdown("""
         <script>
@@ -195,14 +194,14 @@ def add_js_script():
         </script>
     """, unsafe_allow_html=True)
 
-# Authenticate user
+# **Authenticate the user with predefined credentials.**
 def authenticate(username, password):
     if username == "admin" and password == "password106":
         st.session_state.authenticated = True
     else:
         st.error("Invalid username or password")
 
-# Load data from uploaded file
+# **Load data from an uploaded CSV or Excel file.**
 @st.cache_data
 def load_data(uploaded_file):
     if uploaded_file.name.endswith('.xlsx'):
@@ -210,19 +209,19 @@ def load_data(uploaded_file):
     else:
         return pd.read_csv(uploaded_file)
 
-# Prompt the user to select the datetime column
+# **Prompt the user to select the datetime column from the uploaded data.**
 def select_datetime_column(df):
     datetime_columns = df.columns
     selected_column = st.selectbox('Select the datetime column:', datetime_columns)
     return selected_column
 
-# Validate 'DateTime' column and format
+# **Validate the datetime column in the uploaded data and ensure it is in a correct format.**
 def validate_datetime_column(df, datetime_col):
     date_formats = [
         '%d/%m/%Y %I:%M:%S.%f %p',
         '%d/%m/%Y %I:%M:%S.%f',
         '%d/%m/%Y %I:%M:%S.',
-        '%d/%m/%Y %I'
+        '%d/%m/%Y %I',
         '%d/%m/%Y'
     ]
     
@@ -239,14 +238,14 @@ def validate_datetime_column(df, datetime_col):
     st.write(df.head())  # Display the first few rows of the dataframe for debugging
     return False
 
-# Preprocess data
+# **Preprocess the data by converting the datetime column to a datetime format and setting it as the index.**
 @st.cache_data
 def preprocess_data(df, datetime_col):
     date_formats = [
         '%d/%m/%Y %I:%M:%S.%f %p',
         '%d/%m/%Y %I:%M:%S.%f',
         '%d/%m/%Y %I:%M:%S.',
-        '%d/%m/%Y %I'
+        '%d/%m/%Y %I',
         '%d/%m/%Y'
     ]
     for fmt in date_formats:
@@ -261,12 +260,12 @@ def preprocess_data(df, datetime_col):
     st.markdown('<div class="custom-error">The uploaded file does not contain a valid datetime column or the format is incorrect.</div>', unsafe_allow_html=True)
     return df
 
-# Resample dataframe
+# **Resample the dataframe to the specified interval and fill missing values with zero.**
 @st.cache_data
 def get_resampled_df(filtered_df, sampling_interval):
     return filtered_df.resample(f'{sampling_interval}min').mean().fillna(0)
 
-# Generate forecast using Prophet
+# **Generate a forecast using the Prophet model.**
 def generate_forecast(df, value_column, periods):
     df.reset_index(inplace=True)
     df.rename(columns={'DateTime': 'ds', value_column: 'y'}, inplace=True)
@@ -275,12 +274,13 @@ def generate_forecast(df, value_column, periods):
     future = model.make_future_dataframe(periods=periods)
     forecast = model.predict(future)
     return forecast
+# **Logic:** The Prophet model is used for time series forecasting. It decomposes the time series data into trend, seasonality, and holidays, and then predicts future values.
 
-# Display data using streamlit-aggrid
+# **Display the dataframe using the streamlit-aggrid component with pagination and a sidebar.**
 def display_aggrid(df):
     gb = GridOptionsBuilder.from_dataframe(df)
-    gb.configure_pagination(paginationAutoPageSize=True) # Add pagination
-    gb.configure_side_bar() # Add a sidebar
+    gb.configure_pagination(paginationAutoPageSize=True)  # Add pagination
+    gb.configure_side_bar()  # Add a sidebar
     gridOptions = gb.build()
     AgGrid(
         df,
@@ -291,7 +291,7 @@ def display_aggrid(df):
         fit_columns_on_grid_load=True
     )
 
-# Function to download the manual
+# **Provide a download link for the application manual if it exists.**
 def download_manual():
     manual_path = "Applications_manual.pdf"  # File in the same directory
     if os.path.exists(manual_path):
@@ -304,7 +304,7 @@ def download_manual():
     else:
         st.warning("Manual not available. Send request to Ashish Malviya!")
 
-# Outlier treatment function
+# **Treat outliers in the data using the Interquartile Range (IQR) method.**
 def treat_outliers(df, value_column):
     Q1 = df[value_column].quantile(0.25)
     Q3 = df[value_column].quantile(0.75)
@@ -313,14 +313,15 @@ def treat_outliers(df, value_column):
     upper_bound = Q3 + 1.5 * IQR
     treated_df = df[(df[value_column] >= lower_bound) & (df[value_column] <= upper_bound)]
     return treated_df
+# **Logic:** The IQR method is used to identify and remove outliers. The lower and upper bounds are calculated as Q1 - 1.5 * IQR and Q3 + 1.5 * IQR, respectively.
 
-# Function to filter out zero values
+# **Filter out rows with zero values in the specified columns.**
 def filter_zeros(df, columns):
     for col in columns:
         df = df[df[col] != 0]
     return df
 
-# Main function
+# **Main function to run the Streamlit application.**
 def main():
     custom_css()
     logo_src = load_logo('logo.png')
@@ -329,7 +330,7 @@ def main():
     timezone = st.query_params.get('timezone', ['UTC'])[0]
 
     display_logo_and_date(logo_src, timezone)
-    st.markdown("<h1 class='main-title'>STARENGTS TIMESERIES ANALYSIS APPLICATION</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 class='main-title'>HENKEL TIMESERIES ANALYSIS APPLICATION</h1>", unsafe_allow_html=True)
 
     if 'authenticated' not in st.session_state:
         st.session_state.authenticated = False
@@ -410,7 +411,6 @@ def main():
     if 'df' in st.session_state:
         df = st.session_state.df
 
-        
         st.markdown("<hr>", unsafe_allow_html=True)
 
         st.markdown("**DataFrame Overview:**", unsafe_allow_html=True)
@@ -432,7 +432,8 @@ def main():
         st.markdown("<hr>", unsafe_allow_html=True)
         st.markdown("**Total number of data points:**", unsafe_allow_html=True)
         st.markdown(f"<div class='df-shape-size'>{df.size}</div>", unsafe_allow_html=True)
-
+        
+        st.markdown("<hr>", unsafe_allow_html=True)
         for col in df.select_dtypes(include=['category', 'object']).columns:
             unique_values = df[col].unique()
             selected_values = st.multiselect(f"Filter by {col}", unique_values, default=unique_values)
@@ -455,29 +456,32 @@ def main():
 
         fig = go.Figure()
 
+        # **Detect inactivity periods by calculating the rolling max-min difference and marking periods with low variation.**
         inactivity_mask = (treated_df[value_column].rolling('10min').max() - treated_df[value_column].rolling('10min').min()) <= 15
         active_df = treated_df[~inactivity_mask]
         inactive_df = treated_df[inactivity_mask]
 
+        # **Plot active periods, inactivity periods, and anomalies.**
         fig.add_trace(go.Scatter(x=active_df.index, y=active_df[value_column], mode='lines', line=dict(color='blue'), name='Active Periods', connectgaps=True))
         fig.add_trace(go.Scatter(x=inactive_df.index, y=inactive_df[value_column], mode='lines', line=dict(color='red'), name='Inactivity Periods', connectgaps=True))
         fig.add_trace(go.Scatter(x=treated_df[treated_df['Anomaly'] == -1].index, y=treated_df[treated_df['Anomaly'] == -1][value_column], mode='markers', name='Anomalies', marker=dict(color='orange')))
 
+        # **Linear regression to find the trend in the data.**
         X = np.array((treated_df.index - treated_df.index.min()).total_seconds()).reshape(-1, 1)
         y = treated_df[value_column].values
         reg = LinearRegression().fit(X, y)
         y_pred = reg.predict(X)
 
+        # **Plot the regression line.**
         fig.add_trace(go.Scatter(x=treated_df.index, y=y_pred, mode='lines', line=dict(color='green', dash='dash'), name='Regression Line'))
 
         fig.update_layout(title='Time Series Data with Inactivity Periods, Anomalies, and Regression Line', xaxis_title='DateTime', yaxis_title=value_column)
         st.plotly_chart(fig)
         st.markdown("**The time series plot displays the data over time, with blue lines representing active periods, red lines indicating inactivity periods, and orange markers highlighting anomalies. The green dashed line shows the linear regression line, which helps identify the overall trend in the data.**")
 
-
         st.markdown("<hr>", unsafe_allow_html=True)
 
-        # Add Box Plot after Time Series Plot
+        # **Add Box Plot after Time Series Plot**
         st.markdown("**Box Plot of Selected Value Column**")
         box_plot_fig = px.box(
             treated_df, 
@@ -490,6 +494,7 @@ def main():
 
         st.markdown("<hr>", unsafe_allow_html=True)
 
+        # **Decompose the time series data into trend, seasonal, and residual components.**
         decomposition = seasonal_decompose(treated_df[value_column], model='additive', period=30)
         trend = decomposition.trend.dropna()
         seasonal = decomposition.seasonal.dropna()
@@ -504,6 +509,7 @@ def main():
 
         st.markdown("<hr>", unsafe_allow_html=True)
 
+        # **Create control charts to monitor the process stability over time.**
         control_chart_fig = go.Figure()
         control_chart_fig.add_trace(go.Scatter(x=treated_df.index, y=treated_df[value_column], mode='lines', name='Load cell Value', line=dict(color='blue')))
         control_chart_fig.add_trace(go.Scatter(x=treated_df.index, y=treated_df[value_column].rolling(window=30).std(), mode='lines', name='Rolling Std', line=dict(color='orange'), yaxis='y2'))
@@ -511,9 +517,9 @@ def main():
         st.plotly_chart(control_chart_fig, use_container_width=True)
         st.markdown("**The control chart monitors the process stability over time. The X-bar chart shows the mean of the process, and the R chart displays the range of the process variation. These charts help identify any unusual variations in the process.**")
 
-
         st.markdown("<hr>", unsafe_allow_html=True)
 
+        # **Perform KMeans clustering to group the data into clusters and calculate silhouette score to measure the quality of clustering.**
         kmeans = KMeans(n_clusters=3)
         treated_df['Cluster'] = kmeans.fit_predict(treated_df[[value_column]])
         num_clusters = len(set(treated_df['Cluster']))
@@ -533,9 +539,9 @@ def main():
         st.plotly_chart(cluster_fig, use_container_width=True)
         st.markdown("**The clustering plot uses KMeans to group the data into clusters. Each color represents a different cluster, helping to identify patterns and similarities within the data. The silhouette score indicates how well the data points fit within their clusters, with higher values representing better clustering.**")
 
-
         st.markdown("<hr>", unsafe_allow_html=True)
 
+        # **Calculate descriptive statistics for the selected value column.**
         stats = treated_df[value_column].describe(percentiles=[.25, .5, .75])
 
         total_active_time = active_df.shape[0] * sampling_interval
@@ -568,14 +574,15 @@ def main():
 
         st.markdown("<hr>", unsafe_allow_html=True)
 
-        # Filter numeric columns and remove 'Anomaly' and 'Cluster' columns
+        # **Filter numeric columns and remove 'Anomaly' and 'Cluster' columns**
         numeric_columns = treated_df.select_dtypes(include=[np.number]).columns
         filtered_numeric_columns = [col for col in numeric_columns if col not in ['Anomaly', 'Cluster']]
 
-        # Filter out zero values
+        # **Filter out zero values**
         treated_df_filtered = filter_zeros(treated_df, filtered_numeric_columns)
 
-        for i, col in enumerate(filtered_numeric_columns):  # Corrected line
+        # **Plot histograms for numeric columns.**
+        for i, col in enumerate(filtered_numeric_columns):
             fig_hist.add_trace(go.Histogram(x=treated_df_filtered[col], name=col, marker=dict(color=colors[i % len(colors)]), opacity=0.75))
 
         fig_hist.update_layout(barmode='overlay', title='Histogram of Numeric Columns', xaxis_title='Value', yaxis_title='Count', legend=dict(x=1, y=1, traceorder='normal'), bargap=0.2)
@@ -586,6 +593,7 @@ def main():
 
         st.markdown("<hr>", unsafe_allow_html=True)
 
+        # **Generate pair plots for visualizing relationships between features.**
         st.markdown("<div class='pair-plot'>Pair Plot</div>", unsafe_allow_html=True)
         pair_plot_fig = sns.pairplot(treated_df_filtered[filtered_numeric_columns], diag_kind='kde')
         sns.set_style("white") 
@@ -595,6 +603,7 @@ def main():
 
         st.markdown("<hr>", unsafe_allow_html=True)
 
+        # **Generate a correlation heatmap to display correlation coefficients between pairs of features.**
         st.markdown("<div class='correlation-heatmap'></div>", unsafe_allow_html=True)
         corr = treated_df_filtered[filtered_numeric_columns].corr()
         fig_heatmap = go.Figure(data=go.Heatmap(z=corr.values, x=corr.index.values, y=corr.columns.values, colorscale='Viridis'))
