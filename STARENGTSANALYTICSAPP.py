@@ -40,7 +40,7 @@ def load_logo(filename):
 # Developer info at the bottom left
 st.markdown("""
     <div class='developer-info'>
-        Developer Name : Ashish Malviya Version 1.0.19<br>
+        Developer Name : Ashish Malviya Version 1.0.20<br>
     </div>
 """, unsafe_allow_html=True)
 
@@ -79,7 +79,7 @@ def custom_css():
                 text-align: center;
             }
             .logo {
-                height: 55px;
+                height: 45px;
                 width: auto;  /* Ensures the aspect ratio is maintained */
                 display: inline-block;
                 margin-left: auto;
@@ -523,15 +523,20 @@ def main():
         IQR = Q3 - Q1
         outliers_iqr = treated_df[(treated_df[value_column] < (Q1 - 1.5 * IQR)) | (treated_df[value_column] > (Q3 + 1.5 * IQR))]
 
-        st.markdown("**Outliers detected by IQR method:**")
-        st.dataframe(outliers_iqr, height=200)
 
+        st.markdown("**Outliers detected by IQR method:**")
+        if not outliers_iqr.empty:
+            st.dataframe(outliers_iqr, height=200)
+        else:
+             st.markdown("<span style='color:red; font-weight:bold'>No outliers found in the dataset or you have done the treatment</span>", unsafe_allow_html=True)
         # Anomalies detected by Isolation Forest
         anomalies_iforest = treated_df[treated_df['Anomaly'] == -1]
 
-       # Displaying anomalies with scrolling functionality
         st.markdown("**Anomalies detected by Isolation Forest:**")
-        st.dataframe(anomalies_iforest, height=200)
+        if not anomalies_iforest.empty:
+            st.dataframe(anomalies_iforest, height=200)
+        else:
+            st.markdown("<span style='color:red; font-weight:bold'>No anomalies found in the dataset or you have done the treatment</span>", unsafe_allow_html=True)
 
         st.markdown("<hr>", unsafe_allow_html=True)
 
