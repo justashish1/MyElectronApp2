@@ -40,7 +40,8 @@ def load_logo(filename):
 # Developer info at the bottom left
 st.markdown("""
     <div class='developer-info'>
-        Developer : https://starengts.com/business-analytics , This is the copyright property of Starengts. This is the free public version of the software, Version 1.0.20<br>
+        Developer : www.starengts.com, This is free public version of the software, The application use RAM to store temporary data. Version 1.0.20<br>
+        Copyright © 2021 Starengts - All Rights Reserved
     </div>
 """, unsafe_allow_html=True)
 
