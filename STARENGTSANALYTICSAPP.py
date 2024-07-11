@@ -40,7 +40,8 @@ def load_logo(filename):
 # Developer info at the bottom left
 st.markdown("""
     <div class='developer-info'>
-        Developer : www.starengts.com, Software version 1.0.20<br>
+        Developer : www.starengts.com, Software version 1.0.20.<br>
+        We will not store any uploaded dataset, it will use local RAM.<br>
         Copyright © 2021 Starengts-All Rights Reserved for website.
     </div>
 """, unsafe_allow_html=True)
