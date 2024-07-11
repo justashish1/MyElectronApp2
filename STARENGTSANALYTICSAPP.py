@@ -40,7 +40,8 @@ def load_logo(filename):
 # Developer info at the bottom left
 st.markdown("""
     <div class='developer-info'>
-        Developer : www.starengts.com, This is free public version of the software, The application use RAM to store temporary data. Version 1.0.20<br>
+        Developer : www.starengts.com, This is free public version of the software version 1.0.20<br>
+        Starengts or streamlit will not store or use the data uploaded, The application use RAM to store temporary data and removal when reaploaded or refresh the page.<br>
         Copyright © 2021 Starengts - All Rights Reserved
     </div>
 """, unsafe_allow_html=True)
