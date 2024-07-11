@@ -41,10 +41,7 @@ def load_logo(filename):
 st.markdown("""
     <div class='developer-info'>
         Developer : www.starengts.com, Software version 1.0.20<br>
-        Starengts or streamlit will not store or use the data uploaded. <br>
-        The application use RAM to store temporary data and removal  <br>
-        when reaploaded or refresh the page. <br>
-        Copyright © 2021 Starengts - All Rights Reserved for website.
+        Copyright © 2021 Starengts-All Rights Reserved for website.
     </div>
 """, unsafe_allow_html=True)
 
