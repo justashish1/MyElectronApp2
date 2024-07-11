@@ -307,7 +307,7 @@ def display_aggrid(df):
 
 # Function to download the manual
 def download_manual():
-    manual_path = "Applications_manual.pdf"  # File in the same directory
+    manual_path = "Applications_manual_1.0.20.pdf"  # File in the same directory
     if os.path.exists(manual_path):
         with open(manual_path, "rb") as file:
             manual_data = file.read()
@@ -316,7 +316,7 @@ def download_manual():
         href = f'<a href="data:application/pdf;base64,{b64}" download="{file_name}"> {file_name}</a>'
         st.markdown(href, unsafe_allow_html=True)
     else:
-        st.warning("Manual not available. Send request to Ashish Malviya!")
+        st.warning("Manual not available. Send request to info@starengts.com!")
 
 # Outlier treatment function
 def treat_outliers(df, value_column):
