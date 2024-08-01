@@ -427,9 +427,7 @@ def main():
         
         st.markdown("""
             <div class='developer-info'>
-                www.starengts.com<br>
-                Copyright © 2021 Starengts-All Rights Reserved Version 1.0.21 <br>
-                Last updated on 08 July 2024<br>
+                Copyright © 2021 Starengts-All Rights Reserved Version 1.0.21, Last updated on 08 July 2024, Visit : www.starengts.com<br>
             </div>
         """, unsafe_allow_html=True)
 
