@@ -140,7 +140,7 @@ def custom_css():
             .download-manual {
                 font-size: 12px;
                 font-weight: bold;
-                position: relative;
+                position: fixed;
                 bottom: 30px;
                 left: 10px;
                 background-color: #32c800;
