@@ -40,7 +40,7 @@ def load_logo(filename):
 # Developer info at the bottom left
 st.markdown("""
     <div class='developer-info'>
-        Software version 1.0.20,Version 1.0.21, Last updated on 08 July 2024<br>
+        Copyright © 2021 Starengts-All Rights Reserved for website., Developer : www.starengts.com,Software version 1.0.20,Version 1.0.21, Last updated on 08 July 2024<br>
     </div>
 """, unsafe_allow_html=True)
 
@@ -172,7 +172,7 @@ def display_logo_and_date(logo_src, timezone_str):
         <div class='header'>
             <div class='current-date' id='current-date'>{get_date(timezone_str)}</div>
             <img src='{logo_src}' class='logo'>
-            <div class='developer-info'>Developer Name : Ashish Malviya</div>
+            <div class='developer-info'>Developer </div>
         </div>
     """
     st.markdown(current_date_html, unsafe_allow_html=True)
