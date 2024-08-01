@@ -38,14 +38,13 @@ def load_logo(filename):
     return f"data:image/png;base64,{encoded_image}"
 
 # Developer info at the bottom left
-if not st.session_state.authenticated:
-    st.markdown("""
-        <div class='developer-info'>
-            www.starengts.com<br>
-            Copyright © 2021 Starengts-All Rights Reserved Version 1.0.21 <br>
-            Last updated on 08 July 2024<br>
-        </div>
-    """, unsafe_allow_html=True)
+st.markdown("""
+    <div class='developer-info'>
+        www.starengts.com<br>
+        Copyright © 2021 Starengts-All Rights Reserved Version 1.0.21 <br>
+        Last updated on 08 July 2024<br>
+    </div>
+""", unsafe_allow_html=True)
 
 # Custom CSS for styling
 def custom_css():
@@ -434,7 +433,6 @@ def main():
             authenticate(username, password)
             if st.session_state.authenticated:
                 st.experimental_rerun()
-    if not st.session_state.authenticated:
         download_manual()  # Add manual download button on the login screen
         st.stop()
 
@@ -779,3 +777,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
