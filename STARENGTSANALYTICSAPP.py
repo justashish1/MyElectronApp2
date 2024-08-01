@@ -99,7 +99,7 @@ def custom_css():
             .developer-info {
                 font-size: 12px;
                 text-align: left;
-                position: fixed;
+                position: relative;
                 bottom: 10px;
                 left: 150px;
                 color: white;
