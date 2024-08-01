@@ -238,7 +238,8 @@ db_type = st.sidebar.selectbox("Select database type", ["None", "SQLite", "MySQL
 db_connection_string = st.sidebar.text_input("Database connection string")
 db_query = st.sidebar.text_area("SQL Query")
 
-uploaded_file = st.file_uploader("Choose a file")
+# File upload
+uploaded_file = st.sidebar.file_uploader("Choose a file", type=['csv', 'xlsx', 'xls', 'xlsm', 'xlsb', 'odf', 'ods', 'odt', 'json', 'txt'])
 
 # Load data
 if uploaded_file:
@@ -247,12 +248,6 @@ elif db_type != "None" and db_connection_string and db_query:
     data = load_data(db_type=db_type, db_connection_string=db_connection_string, db_query=db_query)
 else:
     data = None
-
-# Display data
-if data is not None:
-    st.write(data)
-else:
-    st.write("No data loaded")
 
 # Prompt the user to select the datetime column
 def select_datetime_column(df):
