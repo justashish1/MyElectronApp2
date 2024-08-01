@@ -99,7 +99,7 @@ def custom_css():
                 text-align: left;
                 position: fixed;
                 bottom: 10px;
-                left: 80px;
+                left: 100px;
                 color: white;
             }
             .stProgress > div > div > div > div {
