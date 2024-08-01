@@ -40,7 +40,9 @@ def load_logo(filename):
 # Developer info at the bottom left
 st.markdown("""
     <div class='developer-info'>
-        Copyright © 2021 Starengts-All Rights Reserved for website., Developer : www.starengts.com,Software version 1.0.20,Version 1.0.21, Last updated on 08 July 2024<br>
+        www.starengts.com<br>
+        Copyright © 2021 Starengts-All Rights Reserved Version 1.0.21 <br>
+        Last updated on 08 July 2024<br>
     </div>
 """, unsafe_allow_html=True)
 
