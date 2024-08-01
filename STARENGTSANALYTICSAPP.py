@@ -24,7 +24,7 @@ logging.basicConfig(filename='app.log', level=logging.INFO, format='%(asctime)s 
 logging.info('Application started')
 
 # Set the page configuration
-st.set_page_config(page_title="STARENGTS Timeseries Analysis Application", layout="wide")
+st.set_page_config(page_title="HENKEL Timeseries Analysis Application", layout="wide")
 
 # Generate time options
 def generate_time_options():
@@ -40,9 +40,7 @@ def load_logo(filename):
 # Developer info at the bottom left
 st.markdown("""
     <div class='developer-info'>
-        Developer : www.starengts.com, Software version 1.0.20.<br>
-        We will not store any uploaded dataset, it will use local RAM.<br>
-        Copyright © 2021 Starengts-All Rights Reserved for website.
+        Developer Name : Ashish Malviya Version 1.0.21, Last updated on 08 July 2024<br>
     </div>
 """, unsafe_allow_html=True)
 
@@ -140,8 +138,17 @@ def custom_css():
             .df-shape-size {
             }
             .download-manual {
-                font-size: 18px;
+                font-size: 12px;
                 font-weight: bold;
+                position: fixed;
+                bottom: 30px;
+                left: 10px;
+                background-color: #32c800;
+                color: white !important;
+                padding: 4px 8px; /* Adjusted padding to reduce the button size */
+                border-radius: 5px;
+                text-align: center;
+                text-decoration: none;
             }
             .outlier-treatment {
                 font-size: 18px;
@@ -174,16 +181,6 @@ def display_logo_and_date(logo_src, timezone_str):
 def get_date(timezone_str='UTC'):
     tz = pytz.timezone(timezone_str)
     return datetime.now(tz).strftime('%Y-%m-%d')
-
-# Display the logo and date
-def display_logo_and_date(logo_src, timezone_str):
-    current_date_html = f"""
-        <div class='header'>
-            <div class='current-date' id='current-date'>{get_date(timezone_str)}</div>
-            <img src='{logo_src}' class='logo'>
-        </div>
-    """
-    st.markdown(current_date_html, unsafe_allow_html=True)
 
 # Add JavaScript for live date and timezone detection
 def add_js_script():
@@ -237,7 +234,47 @@ def validate_datetime_column(df, datetime_col):
         '%d/%m/%Y %I:%M:%S.%f',
         '%d/%m/%Y %I:%M:%S.',
         '%d/%m/%Y %I',
-        '%d/%m/%Y'
+        '%d/%m/%Y',
+        '%d-%m-%Y %I:%M:%S.%f %p',
+        '%d-%m-%Y %I:%M:%S.%f',
+        '%d-%m-%Y %I:%M:%S.',
+        '%d-%m-%Y %I',
+        '%d-%m-%Y',
+        '%d.%m.%Y %I:%M:%S.%f %p',
+        '%d.%m.%Y %I:%M:%S.%f',
+        '%d.%m.%Y %I:%M:%S.',
+        '%d.%m.%Y %I',
+        '%d.%m.%Y',
+        '%m/%d/%Y %I:%M:%S.%f %p',
+        '%m/%d/%Y %I:%M:%S.%f',
+        '%m/%d/%Y %I:%M:%S.',
+        '%m/%d/%Y %I',
+        '%m/%d/%Y',
+        '%m-%d-%Y %I:%M:%S.%f %p',
+        '%m-%d-%Y %I:%M:%S.%f',
+        '%m-%d-%Y %I:%M:%S.',
+        '%m-%d-%Y %I',
+        '%m-%d-%Y',
+        '%m.%d.%Y %I:%M:%S.%f %p',
+        '%m.%d.%Y %I:%M:%S.%f',
+        '%m.%d.%Y %I:%M:%S.',
+        '%m.%d.%Y %I',
+        '%m.%d.%Y',
+        '%Y/%m/%d %I:%M:%S.%f %p',
+        '%Y/%m/%d %I:%M:%S.%f',
+        '%Y/%m/%d %I:%M:%S.',
+        '%Y/%m/%d %I',
+        '%Y/%m/%d',
+        '%Y-%m-%d %I:%M:%S.%f %p',
+        '%Y-%m-%d %I:%M:%S.%f',
+        '%Y-%m-%d %I:%M:%S.',
+        '%Y-%m-%d %I',
+        '%Y-%m-%d',
+        '%Y.%m.%d %I:%M:%S.%f %p',
+        '%Y.%m.%d %I:%M:%S.%f',
+        '%Y.%m.%d %I:%M:%S.',
+        '%Y.%m.%d %I',
+        '%Y.%m.%d'
     ]
     
     for fmt in date_formats:
@@ -261,7 +298,47 @@ def preprocess_data(df, datetime_col):
         '%d/%m/%Y %I:%M:%S.%f',
         '%d/%m/%Y %I:%M:%S.',
         '%d/%m/%Y %I',
-        '%d/%m/%Y'
+        '%d/%m/%Y',
+        '%d-%m-%Y %I:%M:%S.%f %p',
+        '%d-%m-%Y %I:%M:%S.%f',
+        '%d-%m-%Y %I:%M:%S.',
+        '%d-%m-%Y %I',
+        '%d-%m-%Y',
+        '%d.%m.%Y %I:%M:%S.%f %p',
+        '%d.%m.%Y %I:%M:%S.%f',
+        '%d.%m.%Y %I:%M:%S.',
+        '%d.%m.%Y %I',
+        '%d.%m.%Y',
+        '%m/%d/%Y %I:%M:%S.%f %p',
+        '%m/%d/%Y %I:%M:%S.%f',
+        '%m/%d/%Y %I:%M:%S.',
+        '%m/%d/%Y %I',
+        '%m/%d/%Y',
+        '%m-%d-%Y %I:%M:%S.%f %p',
+        '%m-%d-%Y %I:%M:%S.%f',
+        '%m-%d-%Y %I:%M:%S.',
+        '%m-%d-%Y %I',
+        '%m-%d-%Y',
+        '%m.%d.%Y %I:%M:%S.%f %p',
+        '%m.%d.%Y %I:%M:%S.%f',
+        '%m.%d.%Y %I:%M:%S.',
+        '%m.%d.%Y %I',
+        '%m.%d.%Y',
+        '%Y/%m/%d %I:%M:%S.%f %p',
+        '%Y/%m/%d %I:%M:%S.%f',
+        '%Y/%m/%d %I:%M:%S.',
+        '%Y/%m/%d %I',
+        '%Y/%m/%d',
+        '%Y-%m-%d %I:%M:%S.%f %p',
+        '%Y-%m-%d %I:%M:%S.%f',
+        '%Y-%m-%d %I:%M:%S.',
+        '%Y-%m-%d %I',
+        '%Y-%m-%d',
+        '%Y.%m.%d %I:%M:%S.%f %p',
+        '%Y.%m.%d %I:%M:%S.%f',
+        '%Y.%m.%d %I:%M:%S.',
+        '%Y.%m.%d %I',
+        '%Y.%m.%d'
     ]
     for fmt in date_formats:
         try:
@@ -307,16 +384,16 @@ def display_aggrid(df):
 
 # Function to download the manual
 def download_manual():
-    manual_path = "Applications_manual_1.0.20.pdf"  # File in the same directory
+    manual_path = "Applications_manual.pdf"  # File in the same directory
     if os.path.exists(manual_path):
         with open(manual_path, "rb") as file:
             manual_data = file.read()
         file_name = os.path.basename(manual_path)
         b64 = base64.b64encode(manual_data).decode()
-        href = f'<a href="data:application/pdf;base64,{b64}" download="{file_name}"> {file_name}</a>'
+        href = f'<a href="data:application/pdf;base64,{b64}" download="{file_name}" class="download-manual">Download Manual</a>'
         st.markdown(href, unsafe_allow_html=True)
     else:
-        st.warning("Manual not available. Send request to info@starengts.com!")
+        st.warning("Manual not available. Send request to Ashish Malviya!")
 
 # Outlier treatment function
 def treat_outliers(df, value_column):
@@ -343,7 +420,7 @@ def main():
     timezone = st.query_params.get('timezone', ['UTC'])[0]
 
     display_logo_and_date(logo_src, timezone)
-    st.markdown("<h1 class='main-title'>STARENGTS TIMESERIES ANALYSIS APPLICATION</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 class='main-title'>HENKEL TIMESERIES ANALYSIS APPLICATION</h1>", unsafe_allow_html=True)
 
     if 'authenticated' not in st.session_state:
         st.session_state.authenticated = False
@@ -355,6 +432,7 @@ def main():
             authenticate(username, password)
             if st.session_state.authenticated:
                 st.experimental_rerun()
+        download_manual()  # Add manual download button on the login screen
         st.stop()
 
     with st.sidebar:
@@ -422,8 +500,7 @@ def main():
             
             st.markdown("<hr>", unsafe_allow_html=True)
             
-            st.markdown("<div class='download-manual'>Download Manual</div>", unsafe_allow_html=True)
-            download_manual()
+            download_manual()  # Add manual download button on the login screen
 
     if 'df' in st.session_state:
         df = st.session_state.df
