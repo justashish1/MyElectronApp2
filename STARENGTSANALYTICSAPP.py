@@ -172,7 +172,6 @@ def display_logo_and_date(logo_src, timezone_str):
         <div class='header'>
             <div class='current-date' id='current-date'>{get_date(timezone_str)}</div>
             <img src='{logo_src}' class='logo'>
-            <div class='developer-info'>Developer </div>
         </div>
     """
     st.markdown(current_date_html, unsafe_allow_html=True)
