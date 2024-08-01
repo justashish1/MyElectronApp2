@@ -74,7 +74,7 @@ def custom_css():
                 font-size: 10px;
                 position: relative;
                 top: 5px;
-                left: 10px;
+                left: 30px;
                 color: #32c800;
             }
             .center-text {
@@ -100,7 +100,7 @@ def custom_css():
                 font-size: 12px;
                 text-align: left;
                 position: fixed;
-                top: 10px;
+                bottom: 10px;
                 left: 150px;
                 color: white;
             }
