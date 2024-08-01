@@ -100,7 +100,7 @@ def custom_css():
                 font-size: 12px;
                 text-align: left;
                 position: fixed;
-                bottom: 10px;
+                top: 10px;
                 left: 150px;
                 color: white;
             }
