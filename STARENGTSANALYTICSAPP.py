@@ -98,8 +98,8 @@ def custom_css():
                 font-size: 12px;
                 text-align: left;
                 position: fixed;
-                bottom: 30px;
-                left: 50px;
+                bottom: 10px;
+                left: 80px;
                 color: white;
             }
             .stProgress > div > div > div > div {
@@ -141,7 +141,7 @@ def custom_css():
                 font-size: 12px;
                 font-weight: bold;
                 position: fixed;
-                bottom: 30px;
+                bottom: 10px;
                 left: 10px;
                 background-color: #32c800;
                 color: white !important;
