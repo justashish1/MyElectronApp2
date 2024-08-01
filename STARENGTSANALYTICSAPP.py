@@ -37,15 +37,6 @@ def load_logo(filename):
         encoded_image = base64.b64encode(image_file.read()).decode()
     return f"data:image/png;base64,{encoded_image}"
 
-# Developer info at the bottom left
-st.markdown("""
-    <div class='developer-info'>
-        www.starengts.com<br>
-        Copyright © 2021 Starengts-All Rights Reserved Version 1.0.21 <br>
-        Last updated on 08 July 2024<br>
-    </div>
-""", unsafe_allow_html=True)
-
 # Custom CSS for styling
 def custom_css():
     st.markdown("""
@@ -193,17 +184,17 @@ def add_js_script():
                 var dateString = now.getFullYear() + '-' + 
                                  ('0' + (now.getMonth() + 1)).slice(-2) + '-' + 
                                  ('0' + now.getDate()).slice(-2);
-                document.getElementById('current-date').innerHTML = dateString.
+                document.getElementById('current-date').innerHTML = dateString;
             }
-            setInterval(updateDate, 1000).
+            setInterval(updateDate, 1000);
 
-            var timezone = Intl.DateTimeFormat().resolvedOptions().timeZone.
-            var tzElement = document.createElement('input').
-            tzElement.type = 'hidden'.
-            tzElement.id = 'timezone'.
-            tzElement.value = timezone.
-            document.body.appendChild(tzElement).
-        }).
+            var timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            var tzElement = document.createElement('input');
+            tzElement.type = 'hidden';
+            tzElement.id = 'timezone';
+            tzElement.value = timezone;
+            document.body.appendChild(tzElement);
+        });
         </script>
     """, unsafe_allow_html=True)
 
@@ -421,7 +412,7 @@ def main():
     timezone = st.query_params.get('timezone', ['UTC'])[0]
 
     display_logo_and_date(logo_src, timezone)
-    st.markdown("<h1 class='main-title'>Starengts TIMESERIES ANALYSIS APPLICATION</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 class='main-title'>STARENGTS TIMESERIES ANALYSIS APPLICATION</h1>", unsafe_allow_html=True)
 
     if 'authenticated' not in st.session_state:
         st.session_state.authenticated = False
@@ -433,6 +424,15 @@ def main():
             authenticate(username, password)
             if st.session_state.authenticated:
                 st.experimental_rerun()
+        
+        st.markdown("""
+            <div class='developer-info'>
+                www.starengts.com<br>
+                Copyright © 2021 Starengts-All Rights Reserved Version 1.0.21 <br>
+                Last updated on 08 July 2024<br>
+            </div>
+        """, unsafe_allow_html=True)
+
         download_manual()  # Add manual download button on the login screen
         st.stop()
 
@@ -500,8 +500,6 @@ def main():
                 st.experimental_rerun()
             
             st.markdown("<hr>", unsafe_allow_html=True)
-            
-            download_manual()  # Add manual download button on the login screen
 
     if 'df' in st.session_state:
         df = st.session_state.df
@@ -777,5 +775,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
