@@ -208,10 +208,17 @@ def authenticate(username, password):
 # Load data from uploaded file
 @st.cache_data
 def load_data(uploaded_file):
-    if uploaded_file.name.endswith('.xlsx'):
+    if uploaded_file.name.endswith(('.xlsx', '.xls', '.xlsm', '.xlsb', '.odf', '.ods', '.odt')):
         return pd.read_excel(uploaded_file)
-    else:
+    elif uploaded_file.name.endswith('.json'):
+        return pd.read_json(uploaded_file)
+    elif uploaded_file.name.endswith('.csv'):
         return pd.read_csv(uploaded_file)
+    elif uploaded_file.name.endswith('.txt'):
+        return pd.read_csv(uploaded_file, delimiter='\t')  # Assuming tab-delimited text files
+    else:
+        st.error("Unsupported file format")
+        return None
 
 # Prompt the user to select the datetime column
 def select_datetime_column(df):
