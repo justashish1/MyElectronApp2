@@ -238,9 +238,6 @@ db_type = st.sidebar.selectbox("Select database type", ["None", "SQLite", "MySQL
 db_connection_string = st.sidebar.text_input("Database connection string")
 db_query = st.sidebar.text_area("SQL Query")
 
-# File upload
-uploaded_file = st.sidebar.file_uploader("Choose a file", type=['csv', 'xlsx', 'xls', 'xlsm', 'xlsb', 'odf', 'ods', 'odt', 'json', 'txt'])
-
 # Load data
 if uploaded_file:
     data = load_data(uploaded_file=uploaded_file)
@@ -472,7 +469,7 @@ def main():
 
     with st.sidebar:
         st.markdown("<h2>Upload Data</h2>", unsafe_allow_html=True)
-        uploaded_file = st.file_uploader("Upload a CSV or Excel file", type=["csv", "xlsx"], label_visibility="visible", help="Upload a file in CSV or Excel format")
+        uploaded_file = st.file_uploader("Upload a CSV or Excel file", type=['csv', 'xlsx', 'xls', 'xlsm', 'xlsb', 'odf', 'ods', 'odt', 'json', 'txt], label_visibility="visible", help="Upload a file in CSV or Excel format")
         if uploaded_file:
             progress_bar = st.progress(0)
             start_time = datetime.now()
