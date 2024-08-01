@@ -276,12 +276,6 @@ def validate_datetime_column(df, datetime_col):
         '%Y.%m.%d %I:%M',
         '%Y.%m.%d %I',
         '%Y.%m.%d'
-        '%Y'
-        '%m'
-        '%d'
-        '%I'
-        '%M'
-        '%S'
     ]
     
     for fmt in date_formats:
@@ -355,12 +349,6 @@ def preprocess_data(df, datetime_col):
         '%Y.%m.%d %I:%M',
         '%Y.%m.%d %I',
         '%Y.%m.%d'
-        '%Y'
-        '%m'
-        '%d'
-        '%I'
-        '%M'
-        '%S'
     ]
     for fmt in date_formats:
         try:
