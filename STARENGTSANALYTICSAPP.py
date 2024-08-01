@@ -40,7 +40,7 @@ def load_logo(filename):
 # Developer info at the bottom left
 st.markdown("""
     <div class='developer-info'>
-        Developer : www.starengts.com, Software version 1.0.20,Version 1.0.21, Last updated on 08 July 2024<br>
+        Software version 1.0.20,Version 1.0.21, Last updated on 08 July 2024<br>
     </div>
 """, unsafe_allow_html=True)
 
