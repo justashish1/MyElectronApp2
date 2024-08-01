@@ -205,20 +205,54 @@ def authenticate(username, password):
     else:
         st.error("Invalid username or password")
 
-# Load data from uploaded file
+# Load data from uploaded file or database connection
 @st.cache_data
-def load_data(uploaded_file):
-    if uploaded_file.name.endswith(('.xlsx', '.xls', '.xlsm', '.xlsb', '.odf', '.ods', '.odt')):
-        return pd.read_excel(uploaded_file)
-    elif uploaded_file.name.endswith('.json'):
-        return pd.read_json(uploaded_file)
-    elif uploaded_file.name.endswith('.csv'):
-        return pd.read_csv(uploaded_file)
-    elif uploaded_file.name.endswith('.txt'):
-        return pd.read_csv(uploaded_file, delimiter='\t')  # Assuming tab-delimited text files
+def load_data(uploaded_file=None, db_type=None, db_connection_string=None, db_query=None):
+    if uploaded_file:
+        if uploaded_file.name.endswith(('.xlsx', '.xls', '.xlsm', '.xlsb', '.odf', '.ods', '.odt')):
+            return pd.read_excel(uploaded_file)
+        elif uploaded_file.name.endswith('.json'):
+            return pd.read_json(uploaded_file)
+        elif uploaded_file.name.endswith('.csv'):
+            return pd.read_csv(uploaded_file)
+        elif uploaded_file.name.endswith('.txt'):
+            return pd.read_csv(uploaded_file, delimiter='\t')  # Assuming tab-delimited text files
+        else:
+            st.error("Unsupported file format")
+            return None
+    elif db_type and db_connection_string and db_query:
+        try:
+            engine = create_engine(db_connection_string)
+            with engine.connect() as connection:
+                return pd.read_sql_query(db_query, connection)
+        except Exception as e:
+            st.error(f"Database connection failed: {e}")
+            return None
     else:
-        st.error("Unsupported file format")
+        st.error("Please provide either a file or database connection details")
         return None
+
+# Sidebar inputs for database connection
+st.sidebar.header("Database Connection")
+db_type = st.sidebar.selectbox("Select database type", ["None", "SQLite", "MySQL", "PostgreSQL"])
+db_connection_string = st.sidebar.text_input("Database connection string")
+db_query = st.sidebar.text_area("SQL Query")
+
+uploaded_file = st.file_uploader("Choose a file")
+
+# Load data
+if uploaded_file:
+    data = load_data(uploaded_file=uploaded_file)
+elif db_type != "None" and db_connection_string and db_query:
+    data = load_data(db_type=db_type, db_connection_string=db_connection_string, db_query=db_query)
+else:
+    data = None
+
+# Display data
+if data is not None:
+    st.write(data)
+else:
+    st.write("No data loaded")
 
 # Prompt the user to select the datetime column
 def select_datetime_column(df):
