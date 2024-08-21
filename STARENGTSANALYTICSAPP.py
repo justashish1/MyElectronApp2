@@ -788,6 +788,6 @@ def main():
                     logging.error(f"Forecasting failed: {e}")
 
         st.markdown("<hr>", unsafe_allow_html=True)            
-
+app = main()
 if __name__ == "__main__":
-    main()
+    app.rum(use_reloader=True))
