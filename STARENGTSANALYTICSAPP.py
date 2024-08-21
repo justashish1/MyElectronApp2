@@ -790,4 +790,4 @@ def main():
         st.markdown("<hr>", unsafe_allow_html=True)            
 app = main()
 if __name__ == "__main__":
-    app.rum(use_reloader=True))
+    app.rum(use_reloader=True)
