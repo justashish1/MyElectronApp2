@@ -445,7 +445,7 @@ def main():
         
         st.markdown("""
             <div class='developer-info'>
-                Copyright © 2024 Starengts-All Rights Reserved, Version 1.0.21, Last updated on 08 July 2024, Visit : www.starengts.com<br>
+                Copyright © 2024 Starengts-All Rights Reserved, Version 1.0.21, Last updated on 08 July 2024, Visit : www.starengts.com<br> Use login - admin and Password : password106.
             </div>
         """, unsafe_allow_html=True)
 
